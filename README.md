@@ -25,6 +25,8 @@ It's an AzuraCast **plugin**: no fork, no changes to AzuraCast's code, and it ru
   listening heat map, with CSV export for both.
 - **Log out all / Log in again:** one button signs every branch out; each player shows the PIN screen
   within a minute.
+- **Public read-only board:** an optional private link that shows the board without a login (no IPs, no changes),
+  switched on and off in the Manage tab.
 - **Manage branches:** add, rename, enable/disable, set or generate PINs, delete. PINs are stored hashed and
   shown only once.
 - **Optional stream lock:** only signed-in branches can play the stream, both through `/listen/…` and
@@ -95,6 +97,7 @@ When every branch uses the new player, lock the stream:
 | `/public/<station>` | The station's public page: PIN login + branch player when switched on |
 | `/public/<station>/branch` | The branch player, always |
 | `/branch-tracker/<station>` | The board: Live · Sessions · Report · Manage (AzuraCast login required) |
+| `/branch-tracker/<station>/public/<key>` | Public read-only board, when switched on (link shown in Manage) |
 
 ### CLI (`azuracast_cli …` inside the container)
 

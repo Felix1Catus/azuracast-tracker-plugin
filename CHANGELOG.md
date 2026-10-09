@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.3.0 (2026-10-10)
+
+- **Public read-only board:** a switch in the board's Manage tab creates a private link
+  (`/branch-tracker/<station>/public/<key>`) that shows Live, Sessions and Report without logging in.
+  It hides IP addresses and devices, has no CSV export and no write actions. Turning the switch off kills the
+  link, and "New link" replaces it. Settings API: `public_board`, `regenerate_public_key`.
+- New migration: `branch_station_settings.public_board_key`.
+
 ## 1.2.1 (2026-10-10)
 
 - **Favicon** on the branch player and the board, using AzuraCast's own browser icon (your uploaded one, or AzuraCast's default).

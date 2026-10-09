@@ -136,5 +136,35 @@ for code in LOA-1 LOA-2; do
   id=$(curl -s -H "X-API-Key: $KEY" "$API" | jq -r ".[] | select(.code==\"$code\") | .id"); [ -n "$id" ] && curl -s -o /dev/null -X DELETE -H "X-API-Key: $KEY" "$API/$id"
 done
 
+# --- public read-only board ---
+ROOT="${API%/api/station/$STATION/branches}"
+req GET "$API/settings"; PB_ORIG=$(jq -r .public_board <<<"$BODY")
+req PUT "$API/settings" '{"public_board":true}'
+check "public board ON returns a share link" 200 '.public_board == true and (.public_board_path | test("/public/[a-f0-9]{32}$"))'
+PB_PATH=$(jq -r .public_board_path <<<"$BODY"); PB_KEY=${PB_PATH##*/}
+CODE=$(curl -s -o /tmp/pb.html -w '%{http_code}' "$ROOT$PB_PATH"); BODY="{\"key\":$(grep -c "\"publicKey\":\"$PB_KEY\"" /tmp/pb.html)}"
+check "public board page loads without login" 200 '.key == 1'
+PBAPI="$ROOT/api/station/$STATION/branch-board/$PB_KEY"
+out=$(curl -s -w '\n%{http_code}' "$PBAPI/live"); BODY=$(head -n -1 <<<"$out"); CODE=$(tail -n 1 <<<"$out")
+check "public live data: branches, no IP or device" 200 '(.branches | length) > 0 and ([.branches[] | .session // {} | has("ip") or has("user_agent")] | any | not)'
+out=$(curl -s -w '\n%{http_code}' "$PBAPI/sessions"); BODY=$(head -n -1 <<<"$out"); CODE=$(tail -n 1 <<<"$out")
+check "public sessions: no IP or device" 200 '[.sessions[] | has("ip") or has("user_agent")] | any | not'
+CT=$(curl -s -o /dev/null -w '%{content_type}' "$PBAPI/sessions?format=csv"); CODE=200; BODY="{\"csv\":$( [[ $CT == text/csv* ]] && echo true || echo false )}"
+check "public board refuses CSV export" 200 '.csv == false'
+CODE=$(curl -s -o /dev/null -w '%{http_code}' "$ROOT/api/station/$STATION/branch-board/0123456789abcdef0123456789abcdef/live"); BODY='{}'
+check "wrong key -> 404" 404
+CODE=$(curl -s -o /dev/null -w '%{http_code}' -X POST "$ROOT/api/station/$STATION/branch-board/$PB_KEY/logout-all"); BODY='{}'
+[ "$CODE" != 200 ] && { PASS=$((PASS+1)); echo "  ok    no write actions on the public board (HTTP $CODE)"; } || { FAIL=$((FAIL+1)); echo "  FAIL  public logout-all answered 200"; }
+req PUT "$API/settings" '{"public_board":true,"regenerate_public_key":true}'
+NEW_PATH=$(jq -r .public_board_path <<<"$BODY")
+CODE=$(curl -s -o /dev/null -w '%{http_code}' "$PBAPI/live"); BODY='{}'
+check "new link: old link stops working (404)" 404
+CODE=$(curl -s -o /dev/null -w '%{http_code}' "$ROOT$NEW_PATH"); BODY='{}'
+check "new link works" 200
+req PUT "$API/settings" '{"public_board":false}'
+CODE=$(curl -s -o /dev/null -w '%{http_code}' "$ROOT$NEW_PATH"); BODY='{}'
+check "board OFF: link -> 404" 404
+[ "$PB_ORIG" = true ] && curl -s -o /dev/null -X PUT "$API/settings" -H "X-API-Key: $KEY" -H 'Content-Type: application/json' -d '{"public_board":true}'
+
 echo "$PASS passed, $FAIL failed"
 [ "$FAIL" = 0 ]

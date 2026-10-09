@@ -27,14 +27,16 @@ final class DashboardPageAction implements SingleActionInterface
     public function __invoke(ServerRequest $request, Response $response, array $params): ResponseInterface
     {
         $station = $request->getStation();
+        $public = isset($params['public_key']);   // PublicBoardController: read-only, no login
 
         $config = [
             'station' => $station->short_name,
             'stationId' => $station->id,
             'stationName' => $station->name,
             'timezone' => $station->timezone ?: 'UTC',
-            'csrf' => $request->getCsrf()->generate(ApiAuth::API_CSRF_NAMESPACE),
-            'canManage' => $request->getAcl()->isAllowed(Permissions::MANAGE, $station->id),
+            'publicKey' => $public ? $params['public_key'] : null,
+            'csrf' => $public ? null : $request->getCsrf()->generate(ApiAuth::API_CSRF_NAMESPACE),
+            'canManage' => !$public && $request->getAcl()->isAllowed(Permissions::MANAGE, $station->id),
             'pinLength' => PinHasher::length(),
             'version' => PingAction::VERSION,
         ];

@@ -129,6 +129,24 @@ return static function (CallableEventDispatcherInterface $dispatcher) use ($guar
             // (or forced by stream-auth enforce). Added by class name so the container injects dependencies.
             $app->add(\Plugin\BranchTracker\Middleware\PublicPageTakeover::class);
 
+            // Public read-only board (share link from the board's Manage tab; 404 when switched off).
+            $pb = Controller\PublicBoardController::class;
+            $app->get('/branch-tracker/{station_id}/public/{key}', $pb . ':pageAction')
+                ->setName('branch-tracker:public-board')
+                ->add(Middleware\RequireStation::class)
+                ->add(Middleware\GetStation::class);
+            $app->group(
+                '/api/station/{station_id}/branch-board/{key}',
+                function (RouteCollectorProxy $group) use ($pb) {
+                    $group->get('/live', $pb . ':liveAction');
+                    $group->get('/sessions', $pb . ':sessionsAction');
+                    $group->get('/report', $pb . ':reportAction');
+                }
+            )->add(Middleware\RequireStation::class)
+                ->add(Middleware\GetStation::class)
+                ->add(Middleware\Module\Api::class)
+                ->add(Middleware\Auth\PublicAuth::class);
+
             // The branch player page.
             $app->get('/public/{station_id}/branch', Controller\PlayerPageAction::class)
                 ->setName('branch-tracker:player')

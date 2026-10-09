@@ -81,6 +81,9 @@
              background: var(--accent-soft); border-radius: 8px; padding: 14px; margin: 14px 0; user-select: all; }
   .dlg-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 14px; }
   form.inline { display: flex; flex-wrap: wrap; gap: 8px; }
+  body.public .col-ip, body.public .csv, body.public #back, body.public #tab-manage, body.public #logout-all { display: none !important; }
+  .badge { font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--accent);
+           background: var(--accent-soft); border-radius: 99px; padding: 3px 10px; }
   @media (max-width: 640px) { .hide-sm { display: none; } input[type="search"] { min-width: 0; width: 100%; } }
 </style>
 </head>
@@ -90,6 +93,7 @@
     <div class="top">
       <a class="back" id="back" href="#">&larr; Station</a>
       <h1>Branches · <span id="station-name"></span></h1>
+      <span class="badge" id="public-badge" hidden>Public view · read-only</span>
       <span class="spacer"></span>
       <span class="meta" id="clock"></span>
     </div>
@@ -116,7 +120,7 @@
       <table>
         <thead><tr>
           <th>Branch</th><th>Status</th><th class="hide-sm">Since</th><th class="num">Today</th>
-          <th class="num hide-sm">Volume</th><th class="hide-sm">Last seen</th><th class="hide-sm">IP</th>
+          <th class="num hide-sm">Volume</th><th class="hide-sm">Last seen</th><th class="hide-sm col-ip">IP</th>
         </tr></thead>
         <tbody id="live-body"><tr><td colspan="7" class="empty">Loading…</td></tr></tbody>
       </table>
@@ -134,13 +138,13 @@
       <button class="btn primary">Show</button>
       <span class="grow"></span>
       <span class="muted" id="sessions-updated"></span>
-      <a class="btn" id="sessions-csv" href="#">Download CSV</a>
+      <a class="btn csv" id="sessions-csv" href="#">Download CSV</a>
     </form>
     <div class="panel table-wrap">
       <table>
         <thead><tr>
           <th>Branch</th><th>Status</th><th>Login</th><th>Logout</th><th>Ended by</th>
-          <th class="num">Session</th><th class="num">Listened</th><th class="hide-sm">IP</th>
+          <th class="num">Session</th><th class="num">Listened</th><th class="hide-sm col-ip">IP</th>
         </tr></thead>
         <tbody id="sessions-body"></tbody>
       </table>
@@ -155,7 +159,7 @@
       <button class="btn primary">Show</button>
       <span class="grow"></span>
       <span class="muted" id="report-updated"></span>
-      <a class="btn" id="report-csv" href="#">Download CSV</a>
+      <a class="btn csv" id="report-csv" href="#">Download CSV</a>
     </form>
     <div class="panel table-wrap"><table id="report-table"></table></div>
     <p class="note">Hours of listening per branch per day (station time). Darker = more.</p>
@@ -169,6 +173,18 @@
         <span><b>Branch PIN login on the station's public page</b> (<a id="public-page-link" href="#" target="_blank"></a>)<br>
           <span class="muted" id="public-page-note">When on, that page shows the PIN screen and branch player instead of AzuraCast's standard player.</span></span>
       </label>
+    </div>
+    <div class="panel" style="padding:14px;margin-bottom:14px">
+      <label style="display:flex;gap:10px;align-items:flex-start;cursor:pointer">
+        <input type="checkbox" id="public-board" style="margin-top:3px">
+        <span><b>Public read-only board</b>: anyone with the link can watch Live, Sessions and Report without logging in
+          (no IP addresses or devices, no changes).<br><span class="muted" id="public-board-note">Off.</span></span>
+      </label>
+      <div id="public-board-tools" style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:10px" hidden>
+        <input id="public-board-url" readonly style="flex:1;min-width:260px" aria-label="Public board link">
+        <button class="btn" id="public-board-copy" type="button">Copy link</button>
+        <button class="btn" id="public-board-regen" type="button" title="Make a new link; the old one stops working">New link</button>
+      </div>
     </div>
     <div class="panel" style="padding:14px;margin-bottom:14px">
       <form class="inline" id="add-form">
@@ -200,13 +216,17 @@
 (() => {
   'use strict';
   const CFG = {{CONFIG_JSON}};
-  const API = `/api/station/${encodeURIComponent(CFG.station)}/branches`;
+  const PUBLIC = !!CFG.publicKey;
+  const API = PUBLIC
+    ? `/api/station/${encodeURIComponent(CFG.station)}/branch-board/${encodeURIComponent(CFG.publicKey)}`
+    : `/api/station/${encodeURIComponent(CFG.station)}/branches`;
   const $ = (s, el = document) => el.querySelector(s);
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
   $('#station-name').textContent = CFG.stationName;
   $('#back').href = `/station/${CFG.stationId}`;
   if (!CFG.canManage) $('#tab-manage').hidden = true;
+  if (PUBLIC) { document.body.classList.add('public'); $('#public-badge').hidden = false; }
 
   // ---------- API ----------
   async function api(path = '', opts = {}) {
@@ -293,7 +313,7 @@
         <td class="num">${b.listened_today_seconds ? hm(b.listened_today_seconds) : '<span class="muted">0m</span>'}</td>
         <td class="num hide-sm">${s && s.volume !== null ? s.volume + '%' : '<span class="muted">—</span>'}</td>
         <td class="hide-sm">${s ? esc(ago(s.last_seen_at)) : '<span class="muted">—</span>'}</td>
-        <td class="hide-sm code">${s ? esc(s.ip) : ''}</td></tr>`;
+        <td class="hide-sm code col-ip">${s ? esc(s.ip || '') : ''}</td></tr>`;
     }).join('') : '<tr><td colspan="7" class="empty">No branches match.</td></tr>';
   }
   $('#live-filter').addEventListener('input', renderLive);
@@ -349,7 +369,7 @@
         <td>${s.end_reason ? esc(reasons[s.end_reason] || s.end_reason) : ''}</td>
         <td class="num">${hm(s.session_seconds)}</td>
         <td class="num">${hm(s.listened_seconds)}</td>
-        <td class="hide-sm code">${esc(s.ip)}</td></tr>`; }).join('') : '<tr><td colspan="8" class="empty">No sessions in this range.</td></tr>';
+        <td class="hide-sm code col-ip">${esc(s.ip || '')}</td></tr>`; }).join('') : '<tr><td colspan="8" class="empty">No sessions in this range.</td></tr>';
       stamp('#sessions-updated');
     } catch (e) { $('#sessions-body').innerHTML = `<tr><td colspan="8" class="empty error">${esc(e.message)}</td></tr>`; }
   }
@@ -385,7 +405,22 @@
   const ppBox = $('#public-page-login');
   $('#public-page-link').textContent = `${location.origin}/public/${CFG.station}`;
   $('#public-page-link').href = `/public/${CFG.station}`;
+  function renderPublicBoard(s) {
+    $('#public-board').checked = !!s.public_board;
+    $('#public-board').disabled = !CFG.canManage;
+    $('#public-board-tools').hidden = !s.public_board;
+    $('#public-board-url').value = s.public_board_path ? location.origin + s.public_board_path : '';
+    $('#public-board-note').textContent = s.public_board ? 'On: share the link below. Turn off to stop it working.' : 'Off: the board needs an AzuraCast login.';
+  }
+  async function savePublicBoard(body) {
+    try { const s = await api('/settings', { method: 'PUT', body }); renderSettings(s); }
+    catch (err) { alert(err.message); }
+  }
+  $('#public-board').addEventListener('change', (e) => savePublicBoard({ public_board: e.target.checked }));
+  $('#public-board-regen').addEventListener('click', () => { if (confirm('Make a new public link? The current link stops working.')) savePublicBoard({ public_board: true, regenerate_public_key: true }); });
+  $('#public-board-copy').addEventListener('click', () => { $('#public-board-url').select(); navigator.clipboard?.writeText($('#public-board-url').value); });
   function renderSettings(s) {
+    renderPublicBoard(s);
     ppBox.checked = s.public_page_login_effective;
     ppBox.disabled = !CFG.canManage || (s.stream_auth === 'enforce');
     $('#public-page-note').textContent = s.stream_auth === 'enforce'

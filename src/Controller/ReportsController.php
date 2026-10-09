@@ -33,7 +33,7 @@ final class ReportsController
         return $response->withJson([
             'station' => ['short_name' => $station->short_name, 'name' => $station->name, 'timezone' => $station->timezone],
             'generated_at' => (new DateTimeImmutable('now', new DateTimeZone($station->timezone ?: 'UTC')))->format(DATE_ATOM),
-            'branches' => $this->presence->live($station),
+            'branches' => $this->publicSafe($request, $this->presence->live($station), 'session'),
         ]);
     }
 
@@ -55,7 +55,7 @@ final class ReportsController
             is_numeric($branchId) ? (int)$branchId : null
         );
 
-        if ('csv' === $request->getQueryParam('format')) {
+        if ('csv' === $request->getQueryParam('format') && !$this->isPublic($request)) {
             return $this->csv($response, "branch-sessions_{$station->short_name}_{$from}_{$to}.csv", [
                 ['Branch ID', 'Branch', 'Login', 'Logout', 'End reason', 'Session (h:mm:ss)', 'Listened (h:mm:ss)', 'Connections', 'IP', 'Device'],
                 ...array_map(static fn(array $r) => [
@@ -64,7 +64,7 @@ final class ReportsController
                 ], $rows),
             ]);
         }
-        return $response->withJson(['from' => $from, 'to' => $to, 'sessions' => $rows]);
+        return $response->withJson(['from' => $from, 'to' => $to, 'sessions' => $this->publicSafe($request, $rows, null)]);
     }
 
     public function reportAction(ServerRequest $request, Response $response, array $params): ResponseInterface
@@ -76,7 +76,7 @@ final class ReportsController
         }
         $report = $this->presence->report($station, $from, $to);
 
-        if ('csv' === $request->getQueryParam('format')) {
+        if ('csv' === $request->getQueryParam('format') && !$this->isPublic($request)) {
             $header = ['Branch ID', 'Branch'];
             foreach ($report['days'] as $d) {
                 $header[] = $d;
@@ -119,6 +119,28 @@ final class ReportsController
             return [$from, $to, sprintf('At most %d days per request.', self::MAX_DAYS)];
         }
         return [$from, $to, null];
+    }
+
+    private function isPublic(ServerRequest $request): bool
+    {
+        return true === $request->getAttribute(PublicBoardController::ATTR);
+    }
+
+    /** On the public board: drop IP addresses and devices (from $rows[i] or $rows[i][$nested]). */
+    private function publicSafe(ServerRequest $request, array $rows, ?string $nested): array
+    {
+        if (!$this->isPublic($request)) {
+            return $rows;
+        }
+        foreach ($rows as &$r) {
+            if (null === $nested) {
+                unset($r['ip'], $r['user_agent']);
+            } elseif (is_array($r[$nested] ?? null)) {
+                unset($r[$nested]['ip'], $r[$nested]['user_agent']);
+            }
+        }
+        unset($r);
+        return $rows;
     }
 
     private function csv(Response $response, string $filename, array $lines): ResponseInterface

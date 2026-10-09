@@ -27,6 +27,10 @@ class StationSettings
     #[ORM\Column]
     public bool $public_page_login = false;
 
+    /** Share key of the public read-only board; NULL = public board off. */
+    #[ORM\Column(length: 64, nullable: true)]
+    public ?string $public_board_key = null;
+
     #[ORM\Column(type: 'datetime_immutable')]
     public DateTimeImmutable $updated_at;
 
