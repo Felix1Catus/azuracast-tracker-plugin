@@ -12,6 +12,11 @@ final class PlayerRenderer
 {
     use SettingsAwareTrait;
 
+    public function __construct(
+        private readonly Favicon $favicon,
+    ) {
+    }
+
     public function render(Station $station): string
     {
         $config = [
@@ -27,6 +32,7 @@ final class PlayerRenderer
         return strtr((string)file_get_contents(dirname(__DIR__, 2) . '/templates/player.html'), [
             '{{STATION_NAME}}' => htmlspecialchars($station->name, ENT_QUOTES),
             '{{PIN_LENGTH}}' => (string)$config['pinLength'],
+            '{{FAVICON}}' => $this->favicon->tags(),
             '{{CONFIG_JSON}}' => json_encode($config, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_THROW_ON_ERROR),
         ]);
     }

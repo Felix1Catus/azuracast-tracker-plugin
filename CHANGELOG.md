@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.2.1 (2026-10-10)
+
+- **Favicon** on the branch player and the board, using AzuraCast's own browser icon (your uploaded one, or AzuraCast's default).
+
 ## 1.2.0 (2026-10-10)
 
 - **"Log out all / Log in again"** button on the board (Live tab, needs Manage Branches) and
