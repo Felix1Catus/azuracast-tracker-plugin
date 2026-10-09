@@ -1,0 +1,447 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Branches · {{STATION_NAME}}</title>
+<style>
+  :root {
+    --bg: #f4f5f7; --panel: #ffffff; --text: #1d2330; --muted: #677084; --line: #e3e6ec;
+    --accent: #2f7d5b; --accent-ink: #ffffff; --accent-soft: #e3f2ea;
+    --playing: #2f9e6b; --online: #d99a26; --offline: #a3aab8; --danger: #c43c3c;
+    --heat: 47, 125, 91;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #12151b; --panel: #1b1f27; --text: #e6e9ef; --muted: #98a1b3; --line: #2b313c;
+      --accent: #50a17b; --accent-ink: #0c1410; --accent-soft: #1d3329;
+      --playing: #50c48c; --online: #e5b04a; --offline: #5d6575; --danger: #e06464;
+      --heat: 80, 161, 123;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+         font: 14px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  [hidden] { display: none !important; }
+  header { background: var(--panel); border-bottom: 1px solid var(--line); }
+  .wrap { max-width: 1200px; margin: 0 auto; padding: 0 16px; }
+  .top { display: flex; align-items: center; gap: 12px; padding: 14px 0 6px; }
+  .top h1 { font-size: 18px; margin: 0; }
+  .top .back { color: var(--muted); text-decoration: none; font-size: 13px; }
+  .top .back:hover { color: var(--text); }
+  .top .spacer { flex: 1; }
+  .top .meta { color: var(--muted); font-size: 12px; }
+  nav { display: flex; gap: 4px; overflow-x: auto; }
+  nav button { background: none; border: 0; border-bottom: 2px solid transparent; color: var(--muted);
+               padding: 10px 12px; font: inherit; font-weight: 600; cursor: pointer; white-space: nowrap; }
+  nav button[aria-selected="true"] { color: var(--text); border-bottom-color: var(--accent); }
+  main { padding: 18px 0 40px; }
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; }
+  .toolbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 12px; }
+  .toolbar .grow { flex: 1; }
+  input, select, button.btn { font: inherit; color: var(--text); background: var(--panel);
+    border: 1px solid var(--line); border-radius: 7px; padding: 7px 10px; }
+  input[type="search"] { min-width: 200px; }
+  button.btn { cursor: pointer; font-weight: 600; }
+  button.btn:hover { border-color: var(--muted); }
+  button.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+  button.btn.danger { color: var(--danger); }
+  a.btn { text-decoration: none; display: inline-block; color: var(--text); border: 1px solid var(--line);
+          border-radius: 7px; padding: 7px 10px; font-weight: 600; background: var(--panel); }
+  .chips { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 14px; }
+  .chip { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 10px 14px; min-width: 120px; }
+  .chip b { display: block; font-size: 22px; font-variant-numeric: tabular-nums; }
+  .chip span { color: var(--muted); font-size: 12px; }
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  th { font-size: 12px; color: var(--muted); font-weight: 600; position: sticky; top: 0; background: var(--panel); }
+  tbody tr:last-child td { border-bottom: 0; }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .muted { color: var(--muted); }
+  .code { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 12px; color: var(--muted); }
+  .dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 7px; vertical-align: 1px; }
+  .s-playing .dot { background: var(--playing); box-shadow: 0 0 0 3px color-mix(in srgb, var(--playing) 25%, transparent); }
+  .s-online .dot { background: var(--online); }
+  .s-offline .dot { background: var(--offline); }
+  .tag { font-size: 11px; color: var(--muted); border: 1px solid var(--line); border-radius: 4px; padding: 0 4px; margin-left: 6px; }
+  .heat { border-radius: 4px; padding: 2px 6px; display: inline-block; min-width: 46px; text-align: right; }
+  .empty { padding: 30px; text-align: center; color: var(--muted); }
+  .note { color: var(--muted); font-size: 12px; margin-top: 10px; }
+  .error { color: var(--danger); }
+  .row-actions { display: flex; gap: 6px; justify-content: flex-end; }
+  .row-actions button { padding: 4px 8px; font-size: 12px; }
+  dialog { border: 1px solid var(--line); border-radius: 12px; background: var(--panel); color: var(--text);
+           padding: 22px; width: min(420px, calc(100vw - 32px)); }
+  dialog::backdrop { background: rgba(0, 0, 0, .45); }
+  dialog h2 { margin: 0 0 8px; font-size: 17px; }
+  .pin-big { font: 700 34px/1.2 ui-monospace, Consolas, monospace; letter-spacing: 8px; text-align: center;
+             background: var(--accent-soft); border-radius: 8px; padding: 14px; margin: 14px 0; user-select: all; }
+  .dlg-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 14px; }
+  form.inline { display: flex; flex-wrap: wrap; gap: 8px; }
+  @media (max-width: 640px) { .hide-sm { display: none; } input[type="search"] { min-width: 0; width: 100%; } }
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <div class="top">
+      <a class="back" id="back" href="#">&larr; Station</a>
+      <h1>Branches · <span id="station-name"></span></h1>
+      <span class="spacer"></span>
+      <span class="meta" id="clock"></span>
+    </div>
+    <nav role="tablist">
+      <button role="tab" data-tab="live" aria-selected="true">Live</button>
+      <button role="tab" data-tab="sessions">Sessions</button>
+      <button role="tab" data-tab="report">Report</button>
+      <button role="tab" data-tab="manage" id="tab-manage">Manage</button>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <!-- LIVE -->
+  <section data-panel="live">
+    <div class="chips" id="chips"></div>
+    <div class="toolbar">
+      <input type="search" id="live-filter" placeholder="Filter branches…" aria-label="Filter branches">
+      <span class="grow"></span>
+      <span class="muted" id="live-updated"></span>
+    </div>
+    <div class="panel table-wrap">
+      <table>
+        <thead><tr>
+          <th>Branch</th><th>Status</th><th class="hide-sm">Since</th><th class="num">Today</th>
+          <th class="num hide-sm">Volume</th><th class="hide-sm">Last seen</th><th class="hide-sm">IP</th>
+        </tr></thead>
+        <tbody id="live-body"><tr><td colspan="7" class="empty">Loading…</td></tr></tbody>
+      </table>
+    </div>
+    <p class="note"><b>Playing</b> = the branch is signed in and its stream is connected (seen by the server, updates about every 15 s).
+      <b>Signed in · not playing</b> = logged in, but paused or stopped. <b>Offline</b> = not signed in. "Today" is listening time since midnight, station time.</p>
+  </section>
+
+  <!-- SESSIONS -->
+  <section data-panel="sessions" hidden>
+    <form class="toolbar" id="sessions-form">
+      <label>From <input type="date" name="from" required></label>
+      <label>To <input type="date" name="to" required></label>
+      <select name="branch_id" aria-label="Branch"><option value="">All branches</option></select>
+      <button class="btn primary">Show</button>
+      <span class="grow"></span>
+      <span class="muted" id="sessions-updated"></span>
+      <a class="btn" id="sessions-csv" href="#">Download CSV</a>
+    </form>
+    <div class="panel table-wrap">
+      <table>
+        <thead><tr>
+          <th>Branch</th><th>Status</th><th>Login</th><th>Logout</th><th>Ended by</th>
+          <th class="num">Session</th><th class="num">Listened</th><th class="hide-sm">IP</th>
+        </tr></thead>
+        <tbody id="sessions-body"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- REPORT -->
+  <section data-panel="report" hidden>
+    <form class="toolbar" id="report-form">
+      <label>From <input type="date" name="from" required></label>
+      <label>To <input type="date" name="to" required></label>
+      <button class="btn primary">Show</button>
+      <span class="grow"></span>
+      <span class="muted" id="report-updated"></span>
+      <a class="btn" id="report-csv" href="#">Download CSV</a>
+    </form>
+    <div class="panel table-wrap"><table id="report-table"></table></div>
+    <p class="note">Hours of listening per branch per day (station time). Darker = more.</p>
+  </section>
+
+  <!-- MANAGE -->
+  <section data-panel="manage" hidden>
+    <div class="panel" style="padding:14px;margin-bottom:14px">
+      <label style="display:flex;gap:10px;align-items:flex-start;cursor:pointer">
+        <input type="checkbox" id="public-page-login" style="margin-top:3px">
+        <span><b>Branch PIN login on the station's public page</b> (<a id="public-page-link" href="#" target="_blank"></a>)<br>
+          <span class="muted" id="public-page-note">When on, that page shows the PIN screen and branch player instead of AzuraCast's standard player.</span></span>
+      </label>
+    </div>
+    <div class="panel" style="padding:14px;margin-bottom:14px">
+      <form class="inline" id="add-form">
+        <input name="code" placeholder="Branch ID (e.g. HUB-001)" required maxlength="50" aria-label="Branch ID">
+        <input name="name" placeholder="Branch name" required maxlength="100" aria-label="Branch name">
+        <button class="btn primary">Add branch</button>
+        <span class="error" id="add-error"></span>
+      </form>
+    </div>
+    <div class="panel table-wrap">
+      <table>
+        <thead><tr><th>Branch</th><th>Enabled</th><th class="hide-sm">Created</th><th></th></tr></thead>
+        <tbody id="manage-body"></tbody>
+      </table>
+    </div>
+    <p class="note">PINs are 4 digits and are shown only once, when created or changed. Changing a PIN or disabling a branch signs that branch out. AzuraCast admin accounts are managed in AzuraCast under Administration → Users.</p>
+  </section>
+</main>
+
+<dialog id="pin-dialog">
+  <h2 id="pin-title">New PIN</h2>
+  <div id="pin-for" class="muted"></div>
+  <div class="pin-big" id="pin-value"></div>
+  <p class="muted" style="margin:0">Give this PIN to the branch now. It won't be shown again.</p>
+  <div class="dlg-actions"><button class="btn" id="pin-copy">Copy</button><button class="btn primary" id="pin-close">Done</button></div>
+</dialog>
+
+<script>
+(() => {
+  'use strict';
+  const CFG = {{CONFIG_JSON}};
+  const API = `/api/station/${encodeURIComponent(CFG.station)}/branches`;
+  const $ = (s, el = document) => el.querySelector(s);
+  const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+  $('#station-name').textContent = CFG.stationName;
+  $('#back').href = `/station/${CFG.stationId}`;
+  if (!CFG.canManage) $('#tab-manage').hidden = true;
+
+  // ---------- API ----------
+  async function api(path = '', opts = {}) {
+    const headers = { Accept: 'application/json' };
+    if (opts.body !== undefined) headers['Content-Type'] = 'application/json';
+    if ((opts.method || 'GET') !== 'GET') headers['X-API-CSRF'] = CFG.csrf;
+    const res = await fetch(API + path, {
+      method: opts.method || 'GET', headers, credentials: 'same-origin',
+      body: opts.body === undefined ? undefined : JSON.stringify(opts.body),
+    });
+    let data = null;
+    try { data = await res.json(); } catch {}
+    if (!res.ok) throw new Error(data?.message || `Request failed (${res.status})`);
+    return data;
+  }
+
+  // ---------- time helpers (station timezone) ----------
+  const fmtDT = new Intl.DateTimeFormat(undefined, { timeZone: CFG.timezone, month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+  const fmtT = new Intl.DateTimeFormat(undefined, { timeZone: CFG.timezone, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  const fmtDay = new Intl.DateTimeFormat('en-CA', { timeZone: CFG.timezone, year: 'numeric', month: '2-digit', day: '2-digit' });
+  const today = () => fmtDay.format(new Date());
+  const daysAgo = (n) => fmtDay.format(new Date(Date.now() - n * 864e5));
+  const hm = (sec) => { sec = Math.round(sec || 0); const h = Math.floor(sec / 3600), m = Math.floor(sec % 3600 / 60); return h ? `${h}h ${String(m).padStart(2, '0')}m` : `${m}m`; };
+  function ago(iso) {
+    if (!iso) return '';
+    const s = Math.max(0, (Date.now() - Date.parse(iso)) / 1000);
+    if (s < 60) return 'just now';
+    if (s < 3600) return `${Math.floor(s / 60)} min ago`;
+    if (s < 86400) return `${Math.floor(s / 3600)} h ago`;
+    return fmtDT.format(new Date(iso));
+  }
+  setInterval(() => { $('#clock').textContent = `${CFG.timezone} · ${fmtT.format(new Date())}`; }, 1000);
+
+  // ---------- tabs ----------
+  let current = 'live';
+  document.querySelectorAll('nav button').forEach((b) => b.addEventListener('click', () => show(b.dataset.tab)));
+  function show(tab) {
+    current = tab;
+    document.querySelectorAll('nav button').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.tab === tab)));
+    document.querySelectorAll('[data-panel]').forEach((p) => { p.hidden = p.dataset.panel !== tab; });
+    if (tab === 'live' || !liveData.length) loadLive();
+    if (tab === 'sessions' && !$('#sessions-body').children.length) loadSessions();
+    if (tab === 'report' && !$('#report-table').children.length) loadReport();
+    if (tab === 'manage') loadManage();
+    history.replaceState(null, '', `#${tab}`);
+  }
+
+  const STATUS_TEXT = { playing: 'Playing', online: 'Signed in · not playing', offline: 'Offline (not signed in)' };
+  const REFRESH_MS = 10000;
+  const stamp = (id) => { const el = $(id); if (el) el.textContent = `Auto-refresh every ${REFRESH_MS / 1000} s · updated ${fmtT.format(new Date())}`; };
+
+  // ---------- LIVE ----------
+  let liveData = [];
+  async function loadLive() {
+    try {
+      const data = await api('/live');
+      liveData = data.branches;
+      renderLive();
+      stamp('#live-updated');
+      fillBranchSelect();
+    } catch (e) { $('#live-body').innerHTML = `<tr><td colspan="7" class="empty error">${esc(e.message)}</td></tr>`; }
+  }
+  function renderLive() {
+    const q = $('#live-filter').value.trim().toLowerCase();
+    const enabled = liveData.filter((b) => b.is_enabled);
+    const count = (s) => enabled.filter((b) => b.status === s).length;
+    $('#chips').innerHTML = [
+      ['Playing now', count('playing')], ['Signed in, not playing', count('online')], ['Offline', count('offline')],
+      ['Listening today', hm(enabled.reduce((a, b) => a + b.listened_today_seconds, 0))],
+    ].map(([k, v]) => `<div class="chip"><b>${esc(v)}</b><span>${esc(k)}</span></div>`).join('');
+
+    const order = { playing: 0, online: 1, offline: 2 };
+    const rows = liveData
+      .filter((b) => !q || `${b.name} ${b.code}`.toLowerCase().includes(q))
+      .sort((a, b) => (a.is_enabled === b.is_enabled ? 0 : a.is_enabled ? -1 : 1) || order[a.status] - order[b.status] || a.name.localeCompare(b.name));
+    $('#live-body').innerHTML = rows.length ? rows.map((b) => {
+      const s = b.session;
+      const label = STATUS_TEXT[b.status];
+      const since = s ? (s.streaming_since && b.status === 'playing' ? s.streaming_since : s.started_at) : null;
+      return `<tr class="s-${b.status}">
+        <td>${esc(b.name)} <span class="code">${esc(b.code)}</span>${b.is_enabled ? '' : '<span class="tag">disabled</span>'}</td>
+        <td><span class="dot"></span>${label}${b.status_source === 'player' ? '<span class="tag" title="Reported by the player; stream auth is off">reported</span>' : ''}</td>
+        <td class="hide-sm">${since ? esc(fmtDT.format(new Date(since))) : '<span class="muted">—</span>'}</td>
+        <td class="num">${b.listened_today_seconds ? hm(b.listened_today_seconds) : '<span class="muted">0m</span>'}</td>
+        <td class="num hide-sm">${s && s.volume !== null ? s.volume + '%' : '<span class="muted">—</span>'}</td>
+        <td class="hide-sm">${s ? esc(ago(s.last_seen_at)) : '<span class="muted">—</span>'}</td>
+        <td class="hide-sm code">${s ? esc(s.ip) : ''}</td></tr>`;
+    }).join('') : '<tr><td colspan="7" class="empty">No branches match.</td></tr>';
+  }
+  $('#live-filter').addEventListener('input', renderLive);
+  // Auto-refresh whichever tab is open (and keep live status fresh for the Sessions "Status" column).
+  setInterval(async () => {
+    if (document.visibilityState !== 'visible' || $('#pin-dialog').open) return;
+    await loadLive();
+    if (current === 'sessions') loadSessions(true);
+    if (current === 'report') loadReport(true);
+    if (current === 'manage') loadManage();
+  }, REFRESH_MS);
+
+  function fillBranchSelect() {
+    const sel = $('#sessions-form select[name="branch_id"]');
+    if (sel.options.length > 1) return;
+    [...liveData].sort((a, b) => a.name.localeCompare(b.name)).forEach((b) => sel.add(new Option(`${b.name} (${b.code})`, b.id)));
+  }
+
+  // ---------- SESSIONS ----------
+  const sf = $('#sessions-form');
+  sf.from.value = daysAgo(6); sf.to.value = today();
+  sf.addEventListener('submit', (e) => { e.preventDefault(); loadSessions(); });
+  async function loadSessions(quiet = false) {
+    const qs = new URLSearchParams({ from: sf.from.value, to: sf.to.value });
+    if (sf.branch_id.value) qs.set('branch_id', sf.branch_id.value);
+    $('#sessions-csv').href = `${API}/sessions?${qs}&format=csv`;
+    if (!quiet) $('#sessions-body').innerHTML = '<tr><td colspan="8" class="empty">Loading…</td></tr>';
+    try {
+      const data = await api(`/sessions?${qs}`);
+      const reasons = { logout: 'Sign out', timeout: 'Inactivity', replaced: 'Other device', daily_reset: 'Daily reset', admin: 'Admin change' };
+      const liveBy = Object.fromEntries(liveData.map((b) => [b.id, b]));
+      const sessionStatus = (s) => {
+        if (s.ended_at) return ['offline', 'Ended'];
+        const b = liveBy[s.branch.id];
+        return b && b.session && b.session.id === s.id && b.status === 'playing'
+          ? ['playing', 'Active · Playing'] : ['online', 'Active · Not playing'];
+      };
+      $('#sessions-body').innerHTML = data.sessions.length ? data.sessions.map((s) => { const [cls, txt] = sessionStatus(s); return `<tr>
+        <td>${esc(s.branch.name)} <span class="code">${esc(s.branch.code)}</span></td>
+        <td class="s-${cls}"><span class="dot"></span>${txt}</td>
+        <td>${esc(fmtDT.format(new Date(s.started_at)))}</td>
+        <td>${s.ended_at ? esc(fmtDT.format(new Date(s.ended_at))) : '<span class="muted">still signed in</span>'}</td>
+        <td>${s.end_reason ? esc(reasons[s.end_reason] || s.end_reason) : ''}</td>
+        <td class="num">${hm(s.session_seconds)}</td>
+        <td class="num">${hm(s.listened_seconds)}</td>
+        <td class="hide-sm code">${esc(s.ip)}</td></tr>`; }).join('') : '<tr><td colspan="8" class="empty">No sessions in this range.</td></tr>';
+      stamp('#sessions-updated');
+    } catch (e) { $('#sessions-body').innerHTML = `<tr><td colspan="8" class="empty error">${esc(e.message)}</td></tr>`; }
+  }
+
+  // ---------- REPORT ----------
+  const rf = $('#report-form');
+  rf.from.value = daysAgo(6); rf.to.value = today();
+  rf.addEventListener('submit', (e) => { e.preventDefault(); loadReport(); });
+  async function loadReport(quiet = false) {
+    const qs = new URLSearchParams({ from: rf.from.value, to: rf.to.value });
+    $('#report-csv').href = `${API}/report?${qs}&format=csv`;
+    const t = $('#report-table');
+    if (!quiet) t.innerHTML = '<tbody><tr><td class="empty">Loading…</td></tr></tbody>';
+    try {
+      const data = await api(`/report?${qs}`);
+      const max = Math.max(1, ...data.rows.flatMap((r) => data.days.map((d) => r.days[d].listened_seconds)));
+      const dayLabel = (d) => new Date(d + 'T12:00:00Z').toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', timeZone: 'UTC' });
+      const cell = (sec) => {
+        if (!sec) return '<td class="num muted">·</td>';
+        const a = (0.12 + 0.68 * sec / max).toFixed(2);
+        return `<td class="num"><span class="heat" style="background:rgba(var(--heat),${a});color:${a > 0.5 ? '#fff' : 'inherit'}">${hm(sec)}</span></td>`;
+      };
+      const rows = [...data.rows].sort((a, b) => b.total_listened_seconds - a.total_listened_seconds || a.branch.name.localeCompare(b.branch.name));
+      t.innerHTML = `<thead><tr><th>Branch</th>${data.days.map((d) => `<th class="num">${esc(dayLabel(d))}</th>`).join('')}<th class="num">Total</th><th class="num">Sessions</th></tr></thead>
+        <tbody>${rows.map((r) => `<tr><td>${esc(r.branch.name)} <span class="code">${esc(r.branch.code)}</span></td>
+          ${data.days.map((d) => cell(r.days[d].listened_seconds)).join('')}
+          <td class="num"><b>${hm(r.total_listened_seconds)}</b></td><td class="num">${r.total_sessions}</td></tr>`).join('')}</tbody>`;
+      stamp('#report-updated');
+    } catch (e) { t.innerHTML = `<tbody><tr><td class="empty error">${esc(e.message)}</td></tr></tbody>`; }
+  }
+
+  // ---------- MANAGE ----------
+  const ppBox = $('#public-page-login');
+  $('#public-page-link').textContent = `${location.origin}/public/${CFG.station}`;
+  $('#public-page-link').href = `/public/${CFG.station}`;
+  function renderSettings(s) {
+    ppBox.checked = s.public_page_login_effective;
+    ppBox.disabled = !CFG.canManage || (s.stream_auth === 'enforce');
+    $('#public-page-note').textContent = s.stream_auth === 'enforce'
+      ? 'Always on while the stream is locked (stream-auth enforce): the standard player could not play anyway.'
+      : (s.public_page_login ? 'On: the page shows the PIN screen and branch player.' : "Off: the page shows AzuraCast's standard player.");
+  }
+  ppBox.addEventListener('change', async () => {
+    try { renderSettings(await api('/settings', { method: 'PUT', body: { public_page_login: ppBox.checked } })); }
+    catch (err) { alert(err.message); ppBox.checked = !ppBox.checked; }
+  });
+  async function loadManage() {
+    try { renderSettings(await api('/settings')); } catch {}
+    try {
+      const list = await api('');
+      $('#manage-body').innerHTML = list.map((b) => `<tr data-id="${b.id}" data-code="${esc(b.code)}" data-name="${esc(b.name)}">
+        <td>${esc(b.name)} <span class="code">${esc(b.code)}</span>${b.has_open_session ? '<span class="tag">signed in</span>' : ''}</td>
+        <td><input type="checkbox" data-act="toggle" ${b.is_enabled ? 'checked' : ''} aria-label="Enabled"></td>
+        <td class="hide-sm muted">${esc(fmtDT.format(new Date(b.created_at)))}</td>
+        <td><div class="row-actions">
+          <button class="btn" data-act="rename">Rename</button>
+          <button class="btn" data-act="pin">Set PIN</button>
+          <button class="btn danger" data-act="delete">Delete</button></div></td></tr>`).join('');
+    } catch (e) { $('#manage-body').innerHTML = `<tr><td colspan="4" class="empty error">${esc(e.message)}</td></tr>`; }
+  }
+  $('#manage-body').addEventListener('click', async (e) => {
+    const act = e.target.dataset.act; if (!act || act === 'toggle') return;
+    const tr = e.target.closest('tr'); const { id, code, name } = tr.dataset;
+    try {
+      if (act === 'pin') {
+        const typed = prompt(`New PIN for ${name} (${code}).\nType ${CFG.pinLength} digits, or leave empty to generate one.\nThe branch will be signed out.`, '');
+        if (typed === null) return;
+        const r = await api(`/${id}/pin`, { method: 'POST', body: typed.trim() ? { pin: typed.trim() } : {} });
+        showPin(`New PIN for ${name}`, code, r.pin);
+      } else if (act === 'rename') {
+        const n = prompt(`New name for ${code}:`, name); if (!n || n === name) return;
+        await api(`/${id}`, { method: 'PUT', body: { name: n } });
+      } else if (act === 'delete') {
+        if (prompt(`Type ${code} to delete ${name} and all its history.`) !== code) return;
+        await api(`/${id}`, { method: 'DELETE' });
+      }
+      loadManage(); liveData = [];
+    } catch (err) { alert(err.message); }
+  });
+  $('#manage-body').addEventListener('change', async (e) => {
+    if (e.target.dataset.act !== 'toggle') return;
+    const tr = e.target.closest('tr');
+    try { await api(`/${tr.dataset.id}`, { method: 'PUT', body: { is_enabled: e.target.checked } }); }
+    catch (err) { alert(err.message); e.target.checked = !e.target.checked; }
+  });
+  $('#add-form').addEventListener('submit', async (e) => {
+    e.preventDefault(); $('#add-error').textContent = '';
+    const f = e.target;
+    try {
+      const r = await api('', { method: 'POST', body: { code: f.code.value, name: f.name.value } });
+      f.reset(); showPin(`PIN for ${r.name}`, r.code, r.pin); loadManage();
+    } catch (err) { $('#add-error').textContent = err.message; }
+  });
+  function showPin(title, code, pin) {
+    $('#pin-title').textContent = title; $('#pin-for').textContent = code; $('#pin-value').textContent = pin;
+    $('#pin-dialog').showModal();
+  }
+  $('#pin-close').addEventListener('click', () => { $('#pin-value').textContent = ''; $('#pin-dialog').close(); });
+  $('#pin-copy').addEventListener('click', () => navigator.clipboard?.writeText($('#pin-value').textContent));
+
+  // ---------- start ----------
+  const initial = location.hash.slice(1);
+  show(['live', 'sessions', 'report', 'manage'].includes(initial) && !(initial === 'manage' && !CFG.canManage) ? initial : 'live');
+})();
+</script>
+</body>
+</html>

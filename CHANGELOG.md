@@ -1,0 +1,20 @@
+# Changelog
+
+## 1.0.0 (2026-10-10): first public release
+
+Developed and tested on **AzuraCast 0.23.8** (Docker; PHP 8.5.11, MariaDB 11.8.3, Icecast-KH 2.4.0-kh22,
+Liquidsoap 2.4.5).
+
+- **Branches:** add, rename, enable/disable, delete. PINs (4 digits by default, configurable 4–8) are stored
+  as a keyed hash, unique per station, with weak PINs refused. CSV import.
+- **Branch player:** PIN login, one device per branch, auto-reconnect, volume and keyboard shortcuts. It can
+  replace the station's own public page (`public-page on`), or run at `/public/<station>/branch`.
+- **Stream access modes:** `off` / `observe` / `enforce`, using Icecast URL authentication through
+  AzuraCast's per-mount custom configuration.
+- **Server-side presence:** links Icecast connections to AzuraCast listener records. Inactivity sign-out
+  after 5/15 min, daily sign-out at 00:30 station time.
+- **Board inside AzuraCast:** a "Branch Board" button on station pages, with Live, Sessions, Report
+  (heat map) and Manage tabs, CSV exports and 10 s auto-refresh.
+- **Permissions:** "View Branches" and "Manage Branches".
+- **Installer:** `install.sh` for Docker installs (install, update, uninstall), plus a Dockerfile for
+  custom images.

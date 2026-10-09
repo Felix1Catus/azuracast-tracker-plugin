@@ -1,0 +1,344 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<meta name="generator" content="azuracast-tracker-plugin">
+<title>{{STATION_NAME}}</title>
+<style>
+  :root {
+    --green: #50a17b;
+    --green-dark: #3d8060;
+    --green-glow: rgba(80, 161, 123, 0.4);
+    --track: #2a2a2a;
+    --muted: #888888;
+    --text: #ffffff;
+    --bg: #000000;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    background: var(--bg); color: var(--text);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    display: flex; align-items: center; justify-content: center;
+    overflow: hidden; -webkit-user-select: none; user-select: none;
+  }
+  [hidden] { display: none !important; }
+
+  /* ---------- PIN screen (same look branches know) ---------- */
+  #login {
+    position: fixed; inset: 0; z-index: 10;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    display: flex; align-items: center; justify-content: center; padding: 16px;
+  }
+  .card {
+    background: #fff; color: #1a202c; width: 100%; max-width: 420px;
+    padding: 44px 36px; border-radius: 20px; text-align: center;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, .3);
+  }
+  .card h1 { margin: 0 0 8px; font-size: 26px; }
+  .card p { margin: 0 0 20px; color: #4a5568; }
+  #pin {
+    width: 100%; padding: 16px; font-size: 26px; text-align: center; letter-spacing: 12px;
+    border-radius: 10px; border: 2px solid #ddd; color: #1a202c; background: #fff;
+  }
+  #pin:focus { outline: none; border-color: #667eea; }
+  #pin-submit {
+    margin-top: 20px; width: 100%; padding: 14px; font-size: 16px; font-weight: 600;
+    border: 0; border-radius: 10px; background: #667eea; color: #fff; cursor: pointer;
+  }
+  #pin-submit:disabled { opacity: .6; cursor: default; }
+  #login-msg { min-height: 22px; margin: 12px 0 0; color: #e53e3e; font-size: 14px; }
+  #login-msg.info { color: #667eea; }
+
+  /* ---------- player ---------- */
+  #player { width: 100%; max-width: 500px; padding: 32px 20px; text-align: center; }
+  .art-wrap { position: relative; width: 280px; height: 280px; margin: 0 auto 32px; }
+  .ring {
+    position: absolute; inset: 0; border-radius: 50%;
+    background: conic-gradient(var(--green) calc(var(--p, 0) * 1%), var(--track) 0);
+    box-shadow: 0 0 40px var(--green-glow);
+  }
+  .ring::after { content: ""; position: absolute; inset: 14px; border-radius: 50%; background: var(--bg); }
+  #art {
+    position: absolute; inset: 20px; width: 240px; height: 240px; z-index: 1;
+    border-radius: 50%; object-fit: cover; background: #111;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, .6);
+  }
+  #title { font-size: 24px; font-weight: 700; color: var(--green); margin: 0 0 6px;
+           white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #artist { font-size: 16px; color: var(--muted); margin: 0 0 6px;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #times { font-size: 13px; color: #666666; font-variant-numeric: tabular-nums; margin-bottom: 28px; }
+  .controls { display: flex; align-items: center; justify-content: center; gap: 28px; }
+  #play {
+    width: 76px; height: 76px; border-radius: 50%; border: 0; cursor: pointer;
+    background: var(--green); color: #fff; font-size: 28px;
+    box-shadow: 0 0 30px var(--green-glow); display: flex; align-items: center; justify-content: center;
+  }
+  #play:hover { background: var(--green-dark); }
+  #play svg { width: 30px; height: 30px; fill: #fff; }
+  .vol { display: flex; align-items: center; gap: 10px; color: var(--muted); }
+  .vol svg { width: 20px; height: 20px; fill: currentColor; }
+  #volume { -webkit-appearance: none; appearance: none; width: 130px; height: 6px;
+            border-radius: 3px; background: var(--track); outline: none; }
+  #volume::-webkit-slider-thumb { -webkit-appearance: none; width: 18px; height: 18px; border-radius: 50%;
+            background: var(--green); cursor: pointer; }
+  #volume::-moz-range-thumb { width: 18px; height: 18px; border: 0; border-radius: 50%;
+            background: var(--green); cursor: pointer; }
+  #status { margin-top: 26px; min-height: 18px; font-size: 13px; color: var(--muted); }
+  #status.warn { color: #e0a84f; }
+  #branch { position: fixed; left: 16px; bottom: 12px; font-size: 12px; color: #555; }
+  #signout { position: fixed; right: 16px; bottom: 10px; font-size: 12px; color: #555;
+             background: none; border: 0; cursor: pointer; }
+  #signout:hover { color: var(--muted); }
+
+  @media (max-width: 380px), (max-height: 600px) {
+    .art-wrap { width: 220px; height: 220px; margin-bottom: 20px; }
+    #art { width: 184px; height: 184px; inset: 18px; }
+  }
+</style>
+</head>
+<body>
+
+<div id="login">
+  <form class="card" id="login-form" autocomplete="off">
+    <h1>Branch Access</h1>
+    <p>Enter your {{PIN_LENGTH}}-digit branch PIN</p>
+    <input id="pin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="{{PIN_LENGTH}}" autocomplete="off" aria-label="PIN">
+    <button id="pin-submit" type="submit">Access Station</button>
+    <p id="login-msg" role="status"></p>
+  </form>
+</div>
+
+<main id="player" hidden>
+  <div class="art-wrap"><div class="ring" id="ring"></div><img id="art" alt=""></div>
+  <h2 id="title">&nbsp;</h2>
+  <div id="artist">&nbsp;</div>
+  <div id="times">&nbsp;</div>
+  <div class="controls">
+    <button id="play" aria-label="Play">
+      <svg id="icon-play" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+      <svg id="icon-pause" viewBox="0 0 24 24" hidden><path d="M6 5h4v14H6zm8 0h4v14h-4z"/></svg>
+    </button>
+    <label class="vol">
+      <svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3A4.5 4.5 0 0 0 14 8v8a4.5 4.5 0 0 0 2.5-4z"/></svg>
+      <input id="volume" type="range" min="0" max="100" value="80" aria-label="Volume">
+    </label>
+  </div>
+  <div id="status" role="status"></div>
+</main>
+<div id="branch" hidden></div>
+<button id="signout" hidden>Sign out</button>
+<audio id="audio" preload="none"></audio>
+
+<script>
+(() => {
+  'use strict';
+  const CFG = {{CONFIG_JSON}};
+  const API = `/api/station/${encodeURIComponent(CFG.station)}`;
+  const STORE_KEY = `branch-session:${CFG.station}`;
+  const $ = (id) => document.getElementById(id);
+  const audio = $('audio');
+
+  let session = load();          // {token, code, name}
+  let listenUrl = null;
+  let wantPlaying = false;       // user intent; survives reconnects
+  let heartbeatTimer = null, npTimer = null, reconnectTimer = null, reconnectDelay = 2000;
+  let np = null, npFetchedAt = 0;
+
+  // ---------- storage (token only; the PIN is never stored) ----------
+  function load() { try { return JSON.parse(localStorage.getItem(STORE_KEY)); } catch { return null; } }
+  function save(s) { try { s ? localStorage.setItem(STORE_KEY, JSON.stringify(s)) : localStorage.removeItem(STORE_KEY); } catch {} }
+
+  // ---------- API ----------
+  async function post(path, body) {
+    const res = await fetch(API + path, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+    });
+    let data = {};
+    try { data = await res.json(); } catch {}
+    return { status: res.status, data };
+  }
+
+  // ---------- login ----------
+  $('pin').addEventListener('input', (e) => { e.target.value = e.target.value.replace(/\D/g, ''); });
+  $('login-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const pin = $('pin').value.trim();
+    if (pin.length !== CFG.pinLength) return loginMsg(`Enter your ${CFG.pinLength}-digit PIN.`);
+    $('pin-submit').disabled = true;
+    loginMsg('Signing in…', true);
+    try {
+      const { status, data } = await post('/branch/login', { pin });
+      if (status === 200 && data.success) {
+        session = { token: data.token, code: data.branch.code, name: data.branch.name };
+        save(session);
+        $('pin').value = '';
+        loginMsg('');
+        wantPlaying = true;          // the click is a user gesture, so autoplay is allowed
+        showPlayer();
+      } else if (status === 429) {
+        loginMsg(data.message || 'Too many attempts. Please wait a minute.');
+      } else {
+        loginMsg('Invalid PIN.');
+      }
+    } catch {
+      loginMsg('Cannot reach the server. Check the connection and try again.');
+    } finally {
+      $('pin-submit').disabled = false;
+      $('pin').value = '';
+      $('pin').focus();
+    }
+  });
+  function loginMsg(text, info = false) { $('login-msg').textContent = text; $('login-msg').className = info ? 'info' : ''; }
+
+  function showLogin(message) {
+    stopAll();
+    session = null; save(null);
+    $('player').hidden = true; $('branch').hidden = true; $('signout').hidden = true;
+    $('login').hidden = false;
+    loginMsg(message || '');
+    $('pin').focus();
+  }
+
+  async function showPlayer() {
+    $('login').hidden = true;
+    $('player').hidden = false;
+    $('branch').hidden = false; $('signout').hidden = false;
+    $('branch').textContent = `${session.name} · ${session.code}`;
+    await refreshNowPlaying();
+    npTimer = setInterval(refreshNowPlaying, 15000);
+    heartbeatTimer = setInterval(() => heartbeat(), (CFG.heartbeat || 60) * 1000);
+    heartbeat();
+    if (wantPlaying) play(); else status('Press play to start the radio.');
+  }
+
+  function stopAll() {
+    wantPlaying = false;
+    clearInterval(heartbeatTimer); clearInterval(npTimer); clearTimeout(reconnectTimer);
+    audio.pause(); audio.removeAttribute('src'); audio.load();
+    setPlayIcon(false);
+  }
+
+  $('signout').addEventListener('click', () => {
+    if (session) navigator.sendBeacon?.(API + '/branch/logout', JSON.stringify({ token: session.token }));
+    showLogin('Signed out.');
+  });
+
+  // ---------- heartbeat (volume + state only; presence comes from the stream itself) ----------
+  async function heartbeat() {
+    if (!session) return;
+    try {
+      const { status, data } = await post('/branch/heartbeat', {
+        token: session.token, volume: Math.round(audio.volume * 100), state: playerState(),
+      });
+      if (status === 401) showLogin(data.message || 'Please sign in again.');
+    } catch { /* offline: the next beat will retry */ }
+  }
+  let beatSoon = null;
+  const heartbeatSoon = () => { clearTimeout(beatSoon); beatSoon = setTimeout(heartbeat, 1500); };
+  function playerState() {
+    if (!wantPlaying) return 'stopped';
+    if (audio.paused) return 'paused';
+    return audio.readyState < 3 ? 'buffering' : 'playing';
+  }
+
+  // ---------- audio ----------
+  function streamSrc() { return `${listenUrl}${listenUrl.includes('?') ? '&' : '?'}bt=${session.token}&t=${Date.now()}`; }
+
+  function play() {
+    if (!listenUrl) { status('Waiting for the station…', true); scheduleReconnect(); return; }
+    wantPlaying = true;
+    audio.src = streamSrc();
+    audio.play().then(() => { reconnectDelay = 2000; }).catch((err) => {
+      if (err && err.name === 'NotAllowedError') { wantPlaying = false; status('Press play to start the radio.'); setPlayIcon(false); }
+    });
+  }
+  function pause() { wantPlaying = false; audio.pause(); audio.removeAttribute('src'); audio.load(); setPlayIcon(false); heartbeatSoon(); }
+
+  $('play').addEventListener('click', () => (wantPlaying ? pause() : play()));
+  audio.addEventListener('playing', () => { setPlayIcon(true); status(''); reconnectDelay = 2000; heartbeatSoon(); });
+  audio.addEventListener('waiting', () => wantPlaying && status('Buffering…'));
+  for (const ev of ['error', 'stalled', 'ended']) {
+    audio.addEventListener(ev, () => { if (wantPlaying) { status('Connection lost. Reconnecting…', true); scheduleReconnect(); } });
+  }
+  function scheduleReconnect() {
+    clearTimeout(reconnectTimer);
+    reconnectTimer = setTimeout(async () => {
+      if (!wantPlaying || !session) return;
+      await heartbeat();                 // surfaces "signed in elsewhere" instead of looping
+      if (!session) return;
+      if (!listenUrl) await refreshNowPlaying();
+      play();
+    }, reconnectDelay);
+    reconnectDelay = Math.min(reconnectDelay * 2, 30000);
+  }
+  function setPlayIcon(playing) {
+    $('icon-play').hidden = playing; $('icon-pause').hidden = !playing;
+    $('play').setAttribute('aria-label', playing ? 'Pause' : 'Play');
+  }
+
+  // ---------- volume ----------
+  const savedVol = Number(localStorage.getItem('branch-volume'));
+  audio.volume = Number.isFinite(savedVol) && localStorage.getItem('branch-volume') !== null ? savedVol / 100 : 0.8;
+  $('volume').value = Math.round(audio.volume * 100);
+  $('volume').addEventListener('input', (e) => setVolume(Number(e.target.value)));
+  function setVolume(v) {
+    v = Math.max(0, Math.min(100, Math.round(v)));
+    audio.volume = v / 100; $('volume').value = v;
+    try { localStorage.setItem('branch-volume', String(v)); } catch {}
+    heartbeatSoon();                     // debounced: one request after the slider settles
+  }
+
+  // ---------- keyboard (same shortcuts as the old player) ----------
+  document.addEventListener('keydown', (e) => {
+    if ($('player').hidden || ['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName)) return;
+    if (e.code === 'Space') { e.preventDefault(); $('play').click(); }
+    else if (e.code === 'ArrowUp' || e.code === 'ArrowRight') { e.preventDefault(); setVolume(audio.volume * 100 + 5); }
+    else if (e.code === 'ArrowDown' || e.code === 'ArrowLeft') { e.preventDefault(); setVolume(audio.volume * 100 - 5); }
+  });
+
+  // ---------- now playing ----------
+  async function refreshNowPlaying() {
+    try {
+      const res = await fetch(`/api/nowplaying/${encodeURIComponent(CFG.station)}`, { cache: 'no-store' });
+      if (!res.ok) throw new Error(res.status);
+      np = await res.json(); npFetchedAt = Date.now();
+      listenUrl = np.station?.listen_url || listenUrl;
+      const song = np.now_playing?.song || {};
+      $('title').textContent = song.title || np.station?.name || CFG.stationName;
+      $('artist').textContent = song.artist || '';
+      if (song.art && $('art').getAttribute('src') !== song.art) $('art').src = song.art;
+      if (!np.is_online) status(CFG.offlineText || 'Station is offline.', true);
+      else if ($('status').classList.contains('warn') && !audio.paused) status('');
+    } catch {
+      status('Cannot reach the station. Retrying…', true);
+    }
+  }
+  function tick() {
+    const cur = np?.now_playing;
+    if (cur && cur.duration > 0) {
+      const elapsed = Math.min(cur.duration, cur.elapsed + (Date.now() - npFetchedAt) / 1000);
+      $('ring').style.setProperty('--p', (elapsed / cur.duration * 100).toFixed(2));
+      $('times').textContent = `${fmt(elapsed)} / ${fmt(cur.duration)}`;
+    } else {
+      $('ring').style.setProperty('--p', 0); $('times').innerHTML = '&nbsp;';
+    }
+    requestAnimationFrame(tick);
+  }
+  const fmt = (s) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
+  function status(text, warn = false) { $('status').textContent = text; $('status').className = warn ? 'warn' : ''; }
+
+  // Back from background / bfcache: resync without disturbing playback.
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && session) { heartbeat(); refreshNowPlaying(); } });
+  window.addEventListener('pageshow', (e) => { if (e.persisted && session) heartbeat(); });
+
+  // ---------- start ----------
+  requestAnimationFrame(tick);
+  if (session && session.token) showPlayer(); else showLogin();
+})();
+</script>
+</body>
+</html>
