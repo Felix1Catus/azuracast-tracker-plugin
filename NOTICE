@@ -1,8 +1,11 @@
 Tracker: branch tracking plugin for AzuraCast
 Copyright 2026 Felix1Catus
 
-This product is licensed under the Apache License, Version 2.0 (see LICENSE).
+This plugin is licensed under the Apache License, Version 2.0 (see LICENSE).
 
-Tracker is an independent plugin for AzuraCast (https://www.azuracast.com/), which is itself licensed
-under the Apache License 2.0. Tracker does not include or modify AzuraCast source code. It is not
-affiliated with or endorsed by the AzuraCast project.
+Tracker is an independent plugin for AzuraCast (https://www.azuracast.com/). AzuraCast itself is licensed
+under the GNU Affero General Public License v3.0 or later (AGPL-3.0-or-later). Tracker does not include or
+modify AzuraCast source code; it runs inside AzuraCast through AzuraCast's plugin system. When you
+distribute or offer AzuraCast together with this plugin, AzuraCast's AGPL terms apply to AzuraCast.
+
+Tracker is not affiliated with or endorsed by the AzuraCast project.

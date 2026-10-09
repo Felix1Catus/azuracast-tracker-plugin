@@ -159,5 +159,5 @@ station.
 ## License
 
 Copyright 2026 Felix1Catus. Licensed under the [Apache License 2.0](LICENSE).
-Tracker is an independent plugin. It is not affiliated with or endorsed by the AzuraCast project.
+Tracker is an independent plugin (Apache-2.0). AzuraCast itself is AGPL-3.0-or-later; see NOTICE. It is not affiliated with or endorsed by the AzuraCast project.
 "AzuraCast" is used only to describe compatibility.
