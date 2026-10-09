@@ -127,6 +127,16 @@ final class BranchService
         return $this->em->getRepository(BranchSession::class)->findOneBy(['branch' => $branch, 'ended_at' => null]);
     }
 
+    /** Ends every open session of the station (board: "Log out all / Log in again"). Returns how many. */
+    public function endAllOpenSessions(Station $station, SessionEndReason $reason): int
+    {
+        return $this->em->getConnection()->executeStatement(
+            'UPDATE branch_session SET ended_at = UTC_TIMESTAMP(6), end_reason = :reason
+              WHERE station_id = :station AND ended_at IS NULL',
+            ['reason' => $reason->value, 'station' => $station->id]
+        );
+    }
+
     public function endOpenSessions(Branch $branch, SessionEndReason $reason): int
     {
         $sessions = $this->em->getRepository(BranchSession::class)->findBy(['branch' => $branch, 'ended_at' => null]);

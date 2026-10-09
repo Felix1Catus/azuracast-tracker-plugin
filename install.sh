@@ -7,7 +7,7 @@
 #
 # Options:
 #   --dir PATH         AzuraCast directory, the one with docker-compose.yml (default: auto-detect)
-#   --ref REF          Plugin version: a release tag such as v1.1.0 (default) or "main"
+#   --ref REF          Plugin version: a release tag such as v1.2.0 (default) or "main"
 #   --analytics MODE   all | no_ip   AzuraCast listener analytics, which Tracker needs (default: all)
 #   --yes, -y          Don't ask for confirmation
 #   --force            Continue even if the AzuraCast version is not the tested series
@@ -15,7 +15,7 @@
 set -euo pipefail
 
 REPO="Felix1Catus/azuracast-tracker-plugin"
-DEFAULT_REF="v1.1.0"
+DEFAULT_REF="v1.2.0"
 TESTED_SERIES="0.23"            # developed and tested on AzuraCast 0.23.8
 PLUGIN="branch-tracker"         # folder name is required: it defines the PHP namespace Plugin\BranchTracker
 MARK="# managed-by: azuracast-tracker-plugin installer"

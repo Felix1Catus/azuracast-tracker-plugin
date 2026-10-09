@@ -11,4 +11,5 @@ enum SessionEndReason: string
     case Replaced = 'replaced';       // the branch logged in on another device (one device per branch)
     case DailyReset = 'daily_reset';  // nightly reset
     case Admin = 'admin';             // ended by an admin action (PIN changed, branch disabled or deleted)
+    case LogoutAll = 'logout_all';    // admin pressed "Log out all / Log in again" on the board
 }

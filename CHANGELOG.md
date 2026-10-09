@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.2.0 (2026-10-10)
+
+- **"Log out all / Log in again"** button on the board (Live tab, needs Manage Branches) and
+  `POST /api/station/{station}/branches/logout-all`. It ends every open session; each player shows the PIN
+  screen on its next check-in (60 s at most). Sessions show it as "Logged out by admin (all)" (end reason
+  `logout_all`).
+
 ## 1.1.0 (2026-10-10)
 
 - **New branch player design:** record-style album art that spins while playing, a real progress ring,

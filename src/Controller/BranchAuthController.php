@@ -114,6 +114,7 @@ final class BranchAuthController
                 'replaced' => 'This branch was signed in on another device.',
                 'daily_reset' => 'Daily sign-in reset. Please enter your PIN again.',
                 'admin' => 'Your access was changed by an administrator. Please sign in again.',
+                'logout_all' => 'Please sign in again with your branch PIN.',
                 'timeout' => 'Signed out after inactivity.',
                 default => 'Signed out.',
             });

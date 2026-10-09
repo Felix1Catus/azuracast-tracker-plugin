@@ -23,6 +23,8 @@ It's an AzuraCast **plugin**: no fork, no changes to AzuraCast's code, and it ru
   and IP. It refreshes itself every 10 s.
 - **Sessions and reports:** login history (who, when, how it ended, how long they listened) and a per-day
   listening heat map, with CSV export for both.
+- **Log out all / Log in again:** one button signs every branch out; each player shows the PIN screen
+  within a minute.
 - **Manage branches:** add, rename, enable/disable, set or generate PINs, delete. PINs are stored hashed and
   shown only once.
 - **Optional stream lock:** only signed-in branches can play the stream, both through `/listen/…` and
@@ -114,6 +116,7 @@ GET    /api/station/{station}/branches/{id}
 PUT    /api/station/{station}/branches/{id}               {code?, name?, is_enabled?}
 DELETE /api/station/{station}/branches/{id}
 POST   /api/station/{station}/branches/{id}/pin           {pin?} -> set or generate a PIN; signs the branch out
+POST   /api/station/{station}/branches/logout-all         sign out every branch; players ask for the PIN again
 GET    /api/station/{station}/branches/live               live status of every branch
 GET    /api/station/{station}/branches/sessions           ?from=&to=[&branch_id=][&format=csv]
 GET    /api/station/{station}/branches/report             ?from=&to=[&format=csv]

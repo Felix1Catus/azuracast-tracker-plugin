@@ -109,6 +109,7 @@
       <input type="search" id="live-filter" placeholder="Filter branches…" aria-label="Filter branches">
       <span class="grow"></span>
       <span class="muted" id="live-updated"></span>
+      <button class="btn danger" id="logout-all" type="button" title="Sign out every branch; each player shows the PIN screen within a minute">Log out all / Log in again</button>
     </div>
     <div class="panel table-wrap">
       <table>
@@ -295,6 +296,16 @@
     }).join('') : '<tr><td colspan="7" class="empty">No branches match.</td></tr>';
   }
   $('#live-filter').addEventListener('input', renderLive);
+  if (!CFG.canManage) $('#logout-all').hidden = true;
+  $('#logout-all').addEventListener('click', async () => {
+    const signedIn = liveData.filter((b) => b.session).length;
+    if (!confirm(`Log out all branches${signedIn ? ` (${signedIn} signed in now)` : ''}?\n\nEvery branch player stops within a minute and shows the PIN screen; staff enter the PIN again to continue.`)) return;
+    try {
+      const r = await api('/logout-all', { method: 'POST', body: {} });
+      alert(`Signed out ${r.signed_out} branch${r.signed_out === 1 ? '' : 'es'}. Their players will ask for the PIN within a minute.`);
+      loadLive();
+    } catch (err) { alert(err.message); }
+  });
   // Auto-refresh whichever tab is open (and keep live status fresh for the Sessions "Status" column).
   setInterval(async () => {
     if (document.visibilityState !== 'visible' || $('#pin-dialog').open) return;
@@ -321,7 +332,7 @@
     if (!quiet) $('#sessions-body').innerHTML = '<tr><td colspan="8" class="empty">Loading…</td></tr>';
     try {
       const data = await api(`/sessions?${qs}`);
-      const reasons = { logout: 'Sign out', timeout: 'Inactivity', replaced: 'Other device', daily_reset: 'Daily reset', admin: 'Admin change' };
+      const reasons = { logout: 'Sign out', timeout: 'Inactivity', replaced: 'Other device', daily_reset: 'Daily reset', admin: 'Admin change', logout_all: 'Logged out by admin (all)' };
       const liveBy = Object.fromEntries(liveData.map((b) => [b.id, b]));
       const sessionStatus = (s) => {
         if (s.ended_at) return ['offline', 'Ended'];

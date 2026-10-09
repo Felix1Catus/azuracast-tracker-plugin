@@ -80,6 +80,16 @@ final class BranchesController
         return $response->withJson(['success' => true]);
     }
 
+    /** POST: sign out every branch of the station; players show the PIN screen on their next check-in (<= 60 s). */
+    public function logoutAllAction(ServerRequest $request, Response $response, array $params): ResponseInterface
+    {
+        $count = $this->branches->endAllOpenSessions(
+            $request->getStation(),
+            \Plugin\BranchTracker\Entity\Enums\SessionEndReason::LogoutAll
+        );
+        return $response->withJson(['success' => true, 'signed_out' => $count]);
+    }
+
     /** POST {pin?}: set a specific PIN, or omit it to generate one. Ends the branch's open session. */
     public function setPinAction(ServerRequest $request, Response $response, array $params): ResponseInterface
     {

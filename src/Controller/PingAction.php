@@ -15,7 +15,7 @@ final class PingAction implements SingleActionInterface
 {
     use EntityManagerAwareTrait;
 
-    public const string VERSION = '1.1.0';
+    public const string VERSION = '1.2.0';
 
     public function __invoke(ServerRequest $request, Response $response, array $params): ResponseInterface
     {

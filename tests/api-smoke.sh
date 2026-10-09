@@ -112,5 +112,29 @@ if [ "$(jq -r .stream_auth <<<"$BODY")" != "enforce" ]; then
 fi
 req PUT "$API/settings" "{\"public_page_login\":$ORIG}"
 
+# --- "Log out all / Log in again" ---
+PUB="${API%/branches}/branch"
+for code in LOA-1 LOA-2; do
+  id=$(curl -s -H "X-API-Key: $KEY" "$API" | jq -r ".[] | select(.code==\"$code\") | .id"); [ -n "$id" ] && curl -s -o /dev/null -X DELETE -H "X-API-Key: $KEY" "$API/$id"
+done
+P1=$(curl -s -X POST "$API" -H "X-API-Key: $KEY" -H 'Content-Type: application/json' -d '{"code":"LOA-1","name":"Logout All 1"}' | jq -r .pin)
+P2=$(curl -s -X POST "$API" -H "X-API-Key: $KEY" -H 'Content-Type: application/json' -d '{"code":"LOA-2","name":"Logout All 2"}' | jq -r .pin)
+L1=$(curl -s -X POST "$PUB/login" -H 'Content-Type: application/json' -d "{\"pin\":\"$P1\"}" | jq -r .token)
+L2=$(curl -s -X POST "$PUB/login" -H 'Content-Type: application/json' -d "{\"pin\":\"$P2\"}" | jq -r .token)
+CODE=$(curl -s -o /dev/null -w '%{http_code}' -X POST "$API/logout-all"); BODY='{}'
+check "logout-all without credentials -> rejected" 403
+req POST "$API/logout-all" '{}'
+check "logout-all signs out every open session" 200 '.success == true and .signed_out >= 2'
+for T in "$L1" "$L2"; do
+  out=$(curl -s -w '\n%{http_code}' -X POST "$PUB/heartbeat" -H 'Content-Type: application/json' -d "{\"token\":\"$T\"}")
+  BODY=$(head -n -1 <<<"$out"); CODE=$(tail -n 1 <<<"$out")
+  check "player is told to sign in again (logout_all)" 401 '.reason == "logout_all"'
+done
+L1B=$(curl -s -X POST "$PUB/login" -H 'Content-Type: application/json' -d "{\"pin\":\"$P1\"}" | jq -r .token)
+[ ${#L1B} = 64 ] && { PASS=$((PASS+1)); echo "  ok    branch can sign in again right away"; } || { FAIL=$((FAIL+1)); echo "  FAIL  sign in again"; }
+for code in LOA-1 LOA-2; do
+  id=$(curl -s -H "X-API-Key: $KEY" "$API" | jq -r ".[] | select(.code==\"$code\") | .id"); [ -n "$id" ] && curl -s -o /dev/null -X DELETE -H "X-API-Key: $KEY" "$API/$id"
+done
+
 echo "$PASS passed, $FAIL failed"
 [ "$FAIL" = 0 ]
