@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.1.0 (2026-10-10)
+
+- **New branch player design:** record-style album art that spins while playing, a real progress ring,
+  blurred album-art backdrop, LIVE / PAUSED pill, "Up next", and the instance name as a wordmark.
+- **On-screen PIN keypad** for touch screens (physical keyboard still works). The PIN auto-submits at
+  full length, and a wrong PIN shakes the card.
+- **Fix:** the play/pause icon now switches correctly. SVG elements ignore `.hidden`; it now uses
+  `toggleAttribute`.
+
 ## 1.0.0 (2026-10-10): first public release
 
 Developed and tested on **AzuraCast 0.23.8** (Docker; PHP 8.5.11, MariaDB 11.8.3, Icecast-KH 2.4.0-kh22,

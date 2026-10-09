@@ -4,16 +4,21 @@ declare(strict_types=1);
 
 namespace Plugin\BranchTracker\Service;
 
+use App\Container\SettingsAwareTrait;
 use App\Entity\Station;
 
 /** Renders templates/player.html (PIN login + branch player) for a station. Used by both player URLs. */
 final class PlayerRenderer
 {
+    use SettingsAwareTrait;
+
     public function render(Station $station): string
     {
         $config = [
             'station' => $station->short_name,
             'stationName' => $station->name,
+            // Wordmark at the top: the AzuraCast instance name (Administration > Settings), else the station name.
+            'brand' => trim((string)($this->readSettings()->instance_name ?? '')) ?: $station->name,
             'heartbeat' => SessionService::HEARTBEAT_SECONDS,
             'pinLength' => PinHasher::length(),
             'offlineText' => $station->branding_config->offline_text ?? null,
