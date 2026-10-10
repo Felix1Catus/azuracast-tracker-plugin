@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.3.1 (2026-10-10)
+
+- **Source code link** on the branch player and the board when the server runs AzuraCast Retail, which serves
+  its source at `/source` (AGPL-3.0). Nothing changes on a stock AzuraCast install.
+
 ## 1.3.0 (2026-10-10)
 
 - **Public read-only board:** a switch in the board's Manage tab creates a private link

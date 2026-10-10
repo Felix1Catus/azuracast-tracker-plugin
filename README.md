@@ -10,6 +10,7 @@ It's an AzuraCast **plugin**: no fork, no changes to AzuraCast's code, and it ru
 |---|---|
 | **Developed and tested on** | **AzuraCast 0.23.8** (Docker, Oct 2026 build) · PHP 8.5 · MariaDB 11.8 · Icecast-KH 2.4.0-kh22 · Liquidsoap 2.4.5 |
 | **Works with** | AzuraCast **0.23.x** on Docker. Older versions are not supported |
+| **Also runs on** | [AzuraCast Retail](https://github.com/Felix1Catus/azuracast-retail), our AzuraCast fork for in-store radio. There, the player and board also link the server's source code (`/source`) |
 | **Station requirements** | Icecast frontend (AzuraCast's default) |
 | **License** | Apache-2.0 |
 

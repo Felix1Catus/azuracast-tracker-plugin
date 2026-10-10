@@ -21,6 +21,7 @@ final class DashboardPageAction implements SingleActionInterface
 {
     public function __construct(
         private readonly \Plugin\BranchTracker\Service\Favicon $favicon,
+        private readonly \Plugin\BranchTracker\Service\SourceLink $sourceLink,
     ) {
     }
 
@@ -44,6 +45,7 @@ final class DashboardPageAction implements SingleActionInterface
         $html = strtr((string)file_get_contents(dirname(__DIR__, 2) . '/templates/dashboard.html'), [
             '{{STATION_NAME}}' => htmlspecialchars($station->name, ENT_QUOTES),
             '{{FAVICON}}' => $this->favicon->tags(),
+            '{{SOURCE_LINK}}' => $this->sourceLink->html(),
             '{{CONFIG_JSON}}' => json_encode($config, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_THROW_ON_ERROR),
         ]);
 

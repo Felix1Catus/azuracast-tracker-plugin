@@ -144,6 +144,8 @@
   .foot { position: fixed; left: 0; right: 0; bottom: max(12px, env(safe-area-inset-bottom)); display: flex; justify-content: space-between; padding: 0 18px; font-size: 12px; color: var(--faint); }
   #signout { background: none; border: 0; color: var(--faint); font: inherit; cursor: pointer; }
   #signout:hover { color: var(--muted); }
+  .foot .src { color: var(--faint); text-decoration: none; }
+  .foot .src:hover { color: var(--muted); }
 
   @media (max-height: 640px) { .disc { width: min(240px, 60vw); margin-bottom: 18px; } #player { padding-top: 54px; } #login { padding-top: 56px; } .key { height: 50px; } .card { padding: 24px 22px 18px; } .card p.sub { margin-bottom: 14px; } .dots { margin-bottom: 14px; } }
   @media (prefers-reduced-motion: reduce) { .vinyl, .live i { animation: none !important; } }
@@ -188,7 +190,7 @@
   <div id="status" role="status"></div>
 </main>
 
-<footer class="foot"><span id="branch" hidden></span><button id="signout" hidden>Sign out</button></footer>
+<footer class="foot"><span id="branch" hidden></span>{{SOURCE_LINK}}<button id="signout" hidden>Sign out</button></footer>
 <audio id="audio" preload="none"></audio>
 
 <script>

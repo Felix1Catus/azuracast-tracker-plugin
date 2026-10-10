@@ -14,6 +14,7 @@ final class PlayerRenderer
 
     public function __construct(
         private readonly Favicon $favicon,
+        private readonly SourceLink $sourceLink,
     ) {
     }
 
@@ -33,6 +34,7 @@ final class PlayerRenderer
             '{{STATION_NAME}}' => htmlspecialchars($station->name, ENT_QUOTES),
             '{{PIN_LENGTH}}' => (string)$config['pinLength'],
             '{{FAVICON}}' => $this->favicon->tags(),
+            '{{SOURCE_LINK}}' => $this->sourceLink->html(),
             '{{CONFIG_JSON}}' => json_encode($config, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_THROW_ON_ERROR),
         ]);
     }
