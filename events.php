@@ -122,9 +122,12 @@ return static function (CallableEventDispatcherInterface $dispatcher) use ($guar
                 ->add(Middleware\InjectSession::class);
 
             // "Branches" button on AzuraCast's own station pages (no menu hook exists; see InjectNavButton).
-            $app->get(\Plugin\BranchTracker\Middleware\InjectNavButton::SCRIPT_PATH, Controller\NavScriptAction::class)
-                ->setName('branch-tracker:nav-js');
-            $app->add(new \Plugin\BranchTracker\Middleware\InjectNavButton());
+            // AzuraCast Retail has a native "Branch Board" station menu item instead (StationFeatures::BranchBoard).
+            if (!defined('App\Enums\StationFeatures::BranchBoard')) {
+                $app->get(\Plugin\BranchTracker\Middleware\InjectNavButton::SCRIPT_PATH, Controller\NavScriptAction::class)
+                    ->setName('branch-tracker:nav-js');
+                $app->add(new \Plugin\BranchTracker\Middleware\InjectNavButton());
+            }
             // Branch PIN login + player on the station's own /public/{station} page, when switched on per station
             // (or forced by stream-auth enforce). Added by class name so the container injects dependencies.
             $app->add(\Plugin\BranchTracker\Middleware\PublicPageTakeover::class);

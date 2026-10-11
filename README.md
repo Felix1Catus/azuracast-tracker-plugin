@@ -19,7 +19,8 @@ It's an AzuraCast **plugin**: no fork, no changes to AzuraCast's code, and it ru
 - **PIN login for branches** on the station's own public page, with the same URL and a clean player:
   album art, progress ring, volume, keyboard shortcuts, automatic reconnect.
 - **One device per branch:** a login on another device signs the first one out.
-- **Live board inside AzuraCast:** a green **Branch Board** button on every station page, showing each
+- **Live board inside AzuraCast:** a green **Branch Board** button on every station page (on AzuraCast Retail: a
+  **Branch Board** item in the station menu), showing each
   branch as *Playing*, *Signed in · not playing* or *Offline*, with listening time today, volume, last seen
   and IP. It refreshes itself every 10 s.
 - **Sessions and reports:** login history (who, when, how it ended, how long they listened) and a per-day

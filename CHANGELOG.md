@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.3.2 (2026-10-11)
+
+- On **AzuraCast Retail**, which has a native "Branch Board" item in the station menu and ships Tracker built in,
+  the floating "Branch Board" button is no longer injected. Stock AzuraCast installs are unchanged.
+- Tests: the direct-Icecast check runs inside the container, so it also works where port 8000 isn't published.
+
 ## 1.3.1 (2026-10-10)
 
 - **Source code link** on the branch player and the board when the server runs AzuraCast Retail, which serves

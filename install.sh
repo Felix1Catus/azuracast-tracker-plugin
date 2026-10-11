@@ -15,7 +15,7 @@
 set -euo pipefail
 
 REPO="Felix1Catus/azuracast-tracker-plugin"
-DEFAULT_REF="v1.3.1"
+DEFAULT_REF="v1.3.2"
 TESTED_SERIES="0.23"            # developed and tested on AzuraCast 0.23.8
 PLUGIN="branch-tracker"         # folder name is required: it defines the PHP namespace Plugin\BranchTracker
 MARK="# managed-by: azuracast-tracker-plugin installer"
