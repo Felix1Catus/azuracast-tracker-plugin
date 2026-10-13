@@ -9,12 +9,13 @@ use App\Container\SettingsAwareTrait;
 use App\Http\Response;
 use App\Http\ServerRequest;
 use Plugin\BranchTracker\Entity\BranchSession;
+use Plugin\BranchTracker\Service\BranchNotice;
 use Plugin\BranchTracker\Service\LoginThrottle;
 use Plugin\BranchTracker\Service\SessionService;
 use Psr\Http\Message\ResponseInterface;
 
 /**
- * Public branch API used by the player page: /api/station/{station_id}/branch/{login,heartbeat,logout}
+ * Public branch API used by the player page: /api/station/{station_id}/branch/{login,heartbeat,logout,notice-seen}
  * The PIN only ever travels in a POST body. Responses never include PINs.
  */
 final class BranchAuthController
@@ -73,6 +74,7 @@ final class BranchAuthController
             'token' => $token,
             'branch' => ['code' => $session->branch->code, 'name' => $session->branch->name],
             'heartbeat_seconds' => SessionService::HEARTBEAT_SECONDS,
+            'notice' => BranchNotice::forBranch($session->branch),
         ]);
     }
 
@@ -91,7 +93,24 @@ final class BranchAuthController
             isset($body['state']) ? (string)$body['state'] : null
         );
 
-        return $response->withJson(['success' => true, 'heartbeat_seconds' => SessionService::HEARTBEAT_SECONDS]);
+        // Players that were already signed in get the notice here, without signing in again.
+        return $response->withJson([
+            'success' => true,
+            'heartbeat_seconds' => SessionService::HEARTBEAT_SECONDS,
+            'notice' => BranchNotice::forBranch($session->branch),
+        ]);
+    }
+
+    /** Body: {token, id}. The branch dismissed the "what's new" notice; it isn't shown again on any device. */
+    public function noticeSeenAction(ServerRequest $request, Response $response, array $params): ResponseInterface
+    {
+        $body = $this->body($request);
+        $session = $this->sessions->findByToken($request->getStation(), (string)($body['token'] ?? ''));
+        if (null !== ($error = $this->rejectIfClosed($response, $session))) {
+            return $error;
+        }
+        $this->sessions->markNoticeSeen($session, (string)($body['id'] ?? ''));
+        return $response->withJson(['success' => true]);
     }
 
     /** Body: {token}. Accepts navigator.sendBeacon (text/plain JSON body). Idempotent. */

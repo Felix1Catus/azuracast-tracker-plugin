@@ -46,6 +46,21 @@ class Branch
     #[ORM\Column(type: 'datetime_immutable', nullable: true)]
     public ?DateTimeImmutable $locked_until = null;
 
+    /** Companies a branch can belong to (the board's company dropdown and filter). */
+    public const array COMPANIES = ['Tradeline', 'XPRS'];
+
+    /** The company the branch belongs to (one of Branch::COMPANIES), or null when not set. */
+    #[ORM\Column(length: 50, nullable: true)]
+    public ?string $company = null;
+
+    /** The PIN, encrypted (Service\PinVault), for the managers' PIN column. Null until set or recovered. */
+    #[ORM\Column(length: 255, nullable: true)]
+    public ?string $pin_encrypted = null;
+
+    /** Id of the last "what's new" notice (Service\BranchNotice) this branch dismissed. */
+    #[ORM\Column(length: 40, nullable: true)]
+    public ?string $notice_seen = null;
+
     #[ORM\Column(type: 'datetime_immutable')]
     public DateTimeImmutable $created_at;
 
@@ -76,6 +91,7 @@ class Branch
             'code' => $this->code,
             'name' => $this->name,
             'is_enabled' => $this->is_enabled,
+            'company' => $this->company,
             'locked_until' => $this->locked_until?->format(DATE_ATOM),
             'created_at' => $this->created_at->format(DATE_ATOM),
             'updated_at' => $this->updated_at->format(DATE_ATOM),

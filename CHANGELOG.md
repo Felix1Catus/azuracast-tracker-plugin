@@ -1,5 +1,31 @@
 # Changelog
 
+## 1.6.0 (2026-10-13)
+
+- **Company per branch** (Tradeline or XPRS, `Branch::COMPANIES`): a dropdown per branch under Manage (and when
+  adding one), shown as a tag on the board. A **company filter** on the board (All / Tradeline / XPRS / No company
+  set) narrows the table and the summary counts, and the Manage list; it's remembered in the browser.
+  New column `branch_branch.company` (migration); set through `PUT /branches/{id}` with `company`.
+
+## 1.5.0 (2026-10-13)
+
+- **PIN column on the board** with a Copy button, in the live table and under Manage, for users who can manage
+  branches (and administrators) only; viewers and the public board never get PINs. They come from a separate
+  endpoint, `GET /api/station/{id}/branches/pins` ("manage branches").
+- PINs are now also kept encrypted (`branch_branch.pin_encrypted`, libsodium secretbox with a key derived from the
+  PIN key, never stored), next to the HMAC that login uses. Creating a branch or setting a PIN stores it.
+- `branch-tracker:recover-pins` fills the column once for branches created before this: each PIN is found from
+  its HMAC by trying every PIN of 4 to 6 digits (`--max-digits`). PINs and logins don't change.
+
+## 1.4.0 (2026-10-13)
+
+- **One-time "what's new" notice in the branch player**, shown once per branch (not per device) in Egyptian Arabic,
+  right to left, over the player while the music keeps playing. Branches that are already signed in get it with
+  their next heartbeat. Dismissing it is recorded on the branch (`branch_branch.notice_seen`, new migration), so
+  it doesn't come back on another device. The text and its id live in `src/Service/BranchNotice.php`; changing
+  the id shows a new notice to every branch once.
+
+
 ## 1.3.2 (2026-10-11)
 
 - On **AzuraCast Retail**, which has a native "Branch Board" item in the station menu and ships Tracker built in,

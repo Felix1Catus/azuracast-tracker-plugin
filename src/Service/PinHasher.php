@@ -81,6 +81,12 @@ final class PinHasher
         return count($steps) === 1 && in_array(reset($steps), [1, 9], true);
     }
 
+    /** The PIN key, also used (hashed again) by PinVault. */
+    public function secret(): string
+    {
+        return $this->key();
+    }
+
     private function key(): string
     {
         $key = getenv('BRANCH_TRACKER_PIN_KEY') ?: ($this->readSettings()->app_unique_identifier ?? '');

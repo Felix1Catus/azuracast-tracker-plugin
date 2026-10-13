@@ -72,6 +72,18 @@ final class SessionService
         $this->em->flush();
     }
 
+    /** The branch (not just this device) has read the notice; it isn't shown again anywhere. */
+    public function markNoticeSeen(BranchSession $session, string $noticeId): void
+    {
+        if (BranchNotice::ID !== $noticeId) {
+            return;
+        }
+        $branch = $session->branch;
+        $branch->notice_seen = $noticeId;
+        $this->em->persist($branch);
+        $this->em->flush();
+    }
+
     public function logout(BranchSession $session): void
     {
         $session->end(SessionEndReason::Logout);

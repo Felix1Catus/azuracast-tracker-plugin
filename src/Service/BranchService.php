@@ -26,6 +26,7 @@ final class BranchService
 
     public function __construct(
         private readonly PinHasher $pinHasher,
+        private readonly PinVault $pinVault,
     ) {
     }
 
@@ -58,7 +59,7 @@ final class BranchService
 
     /**
      * @return array{0: Branch, 1: string} the branch and its PIN (generated when $pin is null).
-     *         The PIN is only ever available here, at creation.
+     *         Managers can see it later in the board's PIN column (stored encrypted, PinVault).
      */
     public function create(Station $station, string $code, string $name, ?string $pin = null, bool $allowLegacyPin = false): array
     {
@@ -70,13 +71,14 @@ final class BranchService
 
         $pin = $this->choosePin($station, $pin, null, $allowLegacyPin);
         $branch = new Branch($station, $code, $name, $this->pinHasher->hash($station->id, $pin));
+        $branch->pin_encrypted = $this->pinVault->encrypt($pin);
         $this->em->persist($branch);
         $this->em->flush();
 
         return [$branch, $pin];
     }
 
-    /** Partial update of code / name / is_enabled. Disabling ends the branch's open session. */
+    /** Partial update of code / name / company / is_enabled. Disabling ends the branch's open session. */
     public function update(Branch $branch, array $data): Branch
     {
         if (array_key_exists('code', $data)) {
@@ -89,6 +91,13 @@ final class BranchService
         }
         if (array_key_exists('name', $data)) {
             $branch->name = $this->cleanName((string)$data['name']);
+        }
+        if (array_key_exists('company', $data)) {
+            $company = trim((string)$data['company']);
+            if ('' !== $company && !in_array($company, Branch::COMPANIES, true)) {
+                throw new ValidationException(sprintf('Company must be one of: %s.', implode(', ', Branch::COMPANIES)), true);
+            }
+            $branch->company = '' === $company ? null : $company;
         }
         if (array_key_exists('is_enabled', $data)) {
             $branch->is_enabled = filter_var($data['is_enabled'], FILTER_VALIDATE_BOOL);
@@ -107,6 +116,7 @@ final class BranchService
     {
         $pin = $this->choosePin($branch->station, $pin, $branch, $allowLegacyPin);
         $branch->pin_hmac = $this->pinHasher->hash($branch->station->id, $pin);
+        $branch->pin_encrypted = $this->pinVault->encrypt($pin);
         $branch->failed_attempts = 0;
         $branch->locked_until = null;
         $this->endOpenSessions($branch, SessionEndReason::Admin);

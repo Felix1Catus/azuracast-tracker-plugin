@@ -150,6 +150,22 @@
   @media (max-height: 640px) { .disc { width: min(240px, 60vw); margin-bottom: 18px; } #player { padding-top: 54px; } #login { padding-top: 56px; } .key { height: 50px; } .card { padding: 24px 22px 18px; } .card p.sub { margin-bottom: 14px; } .dots { margin-bottom: 14px; } }
   @media (prefers-reduced-motion: reduce) { .vinyl, .live i { animation: none !important; } }
   :focus-visible { outline: 2px solid var(--green-bright); outline-offset: 3px; }
+
+  /* One-time "what's new" notice (Service\BranchNotice), right to left */
+  #notice { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; padding: 20px;
+            background: rgba(2, 5, 4, .72); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+  #notice .box { direction: rtl; text-align: right; width: min(460px, 100%); max-height: calc(100vh - 40px); overflow: auto;
+                 background: #0f1614; border: 1px solid var(--line); border-radius: 20px; padding: 24px 22px 20px;
+                 box-shadow: 0 20px 60px rgba(0, 0, 0, .55), 0 0 0 1px rgba(80, 161, 123, .12);
+                 font-family: "Segoe UI", Tahoma, "Noto Sans Arabic", "Noto Naskh Arabic", "Geeza Pro", Arial, sans-serif; }
+  #notice h3 { margin: 0 0 6px; font-size: 22px; color: var(--green-bright); }
+  #notice .intro { margin: 0 0 16px; color: var(--muted); font-size: 15px; line-height: 1.7; }
+  #notice .item { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; margin-bottom: 10px; }
+  #notice .item b { display: block; font-size: 16px; margin-bottom: 4px; color: var(--text); }
+  #notice .item span { display: block; font-size: 15px; line-height: 1.8; color: #c9d4cf; }
+  #notice button { width: 100%; margin-top: 8px; padding: 14px; border: 0; border-radius: 14px; cursor: pointer;
+                   background: var(--green); color: #fff; font-family: inherit; font-size: 17px; font-weight: 700; line-height: 1.2; }
+  #notice button:hover { background: var(--green-bright); color: #062014; }
 </style>
 </head>
 <body>
@@ -192,6 +208,15 @@
 
 <footer class="foot"><span id="branch" hidden></span>{{SOURCE_LINK}}<button id="signout" hidden>Sign out</button></footer>
 <audio id="audio" preload="none"></audio>
+
+<div id="notice" role="dialog" aria-modal="true" aria-labelledby="notice-title" hidden>
+  <div class="box" lang="ar">
+    <h3 id="notice-title"></h3>
+    <p class="intro" id="notice-intro"></p>
+    <div id="notice-items"></div>
+    <button type="button" id="notice-ok"></button>
+  </div>
+</div>
 
 <script>
 (() => {
@@ -259,6 +284,7 @@
         loginMsg('');
         wantPlaying = true;             // the key press is a user gesture, so autoplay is allowed
         showPlayer();
+        showNotice(data.notice);
       } else {
         loginMsg(status === 429 ? (data.message || 'Too many attempts. Please wait a minute.') : 'Wrong PIN. Try again.');
         $('login-form').classList.remove('shake'); void $('login-form').offsetWidth; $('login-form').classList.add('shake');
@@ -310,6 +336,7 @@
     try {
       const { status, data } = await post('/branch/heartbeat', { token: session.token, volume: Math.round(audio.volume * 100), state: playerState() });
       if (status === 401) showLogin(data.message || 'Please sign in again.');
+      else showNotice(data.notice);
     } catch { /* offline: next beat retries */ }
   }
   let beatSoon = null;
@@ -319,6 +346,28 @@
     if (audio.paused) return 'paused';
     return audio.readyState < 3 ? 'buffering' : 'playing';
   }
+
+  // ---------- one-time "what's new" notice: shown once per branch; the music keeps playing behind it ----------
+  let noticeId = null;
+  function showNotice(n) {
+    if (!n || !n.id || noticeId === n.id || !$('notice').hidden) return;
+    noticeId = n.id;
+    $('notice-title').textContent = n.title || '';
+    $('notice-intro').textContent = n.intro || '';
+    $('notice-items').replaceChildren(...(n.items || []).map((it) => {
+      const d = document.createElement('div'); d.className = 'item';
+      const b = document.createElement('b'); b.textContent = it.title || '';
+      const t = document.createElement('span'); t.textContent = it.text || '';
+      d.append(b, t); return d;
+    }));
+    $('notice-ok').textContent = n.button || 'OK';
+    $('notice').hidden = false;
+    $('notice-ok').focus();
+  }
+  $('notice-ok').addEventListener('click', async () => {
+    $('notice').hidden = true;
+    if (session && noticeId) { try { await post('/branch/notice-seen', { token: session.token, id: noticeId }); } catch {} }
+  });
 
   // ---------- audio ----------
   function streamSrc() { return `${listenUrl}${listenUrl.includes('?') ? '&' : '?'}bt=${session.token}&t=${Date.now()}`; }

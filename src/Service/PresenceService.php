@@ -175,7 +175,7 @@ final class PresenceService
         $dayStart = $now->setTimezone($tz)->setTime(0, 0)->setTimezone(new DateTimeZone('UTC'));
 
         $branches = $this->db()->fetchAllAssociative(
-            'SELECT b.id, b.code, b.name, b.is_enabled,
+            'SELECT b.id, b.code, b.name, b.is_enabled, b.company,
                     s.id AS session_id, s.started_at, s.last_seen_at, s.volume, s.client_state, s.ip, s.user_agent
                FROM branch_branch b
                LEFT JOIN branch_session s ON s.branch_id = b.id AND s.ended_at IS NULL
@@ -217,6 +217,7 @@ final class PresenceService
                 'code' => $b['code'],
                 'name' => $b['name'],
                 'is_enabled' => (bool)$b['is_enabled'],
+                'company' => $b['company'],
                 'status' => $status,          // playing | online (signed in, not playing) | offline
                 'status_source' => $source,   // stream (server-observed) | player (self-reported) | null
                 'session' => null === $b['session_id'] ? null : [

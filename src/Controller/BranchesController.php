@@ -9,6 +9,7 @@ use App\Http\ServerRequest;
 use Plugin\BranchTracker\Entity\Branch;
 use Plugin\BranchTracker\Exception\ValidationException;
 use Plugin\BranchTracker\Service\BranchService;
+use Plugin\BranchTracker\Service\PinVault;
 use Psr\Http\Message\ResponseInterface;
 
 /**
@@ -19,6 +20,7 @@ final class BranchesController
 {
     public function __construct(
         private readonly BranchService $branches,
+        private readonly PinVault $pinVault,
     ) {
     }
 
@@ -29,6 +31,16 @@ final class BranchesController
             $this->branches->listForStation($request->getStation())
         );
         return $response->withJson($rows);
+    }
+
+    /** GET (manage branches): each branch's current PIN for the board's PIN column; null if not known. */
+    public function pinsAction(ServerRequest $request, Response $response, array $params): ResponseInterface
+    {
+        $pins = [];
+        foreach ($this->branches->listForStation($request->getStation()) as $b) {
+            $pins[] = ['id' => $b->id, 'pin' => $this->pinVault->decrypt($b->pin_encrypted)];
+        }
+        return $response->withHeader('Cache-Control', 'no-store')->withJson($pins);
     }
 
     public function getAction(ServerRequest $request, Response $response, array $params): ResponseInterface

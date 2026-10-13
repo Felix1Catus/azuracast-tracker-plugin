@@ -29,8 +29,14 @@ It's an AzuraCast **plugin**: no fork, no changes to AzuraCast's code, and it ru
   within a minute.
 - **Public read-only board:** an optional private link that shows the board without a login (no IPs, no changes),
   switched on and off in the Manage tab.
-- **Manage branches:** add, rename, enable/disable, set or generate PINs, delete. PINs are stored hashed and
-  shown only once.
+- **Manage branches:** add, rename, enable/disable, set or generate PINs, delete, and set the **company** each
+  branch belongs to (Tradeline or XPRS).
+- **PIN column with Copy** for branch managers and administrators, on the board and under Manage. PINs are
+  stored as a hash for login plus an encrypted copy for this column; viewers and the public board never get them.
+- **Company filter** on the board (All / Tradeline / XPRS / No company set): narrows the table, the summary
+  counts and the Manage list; each browser remembers its choice.
+- **One-time "what's new" notice** in the branch player, in Egyptian Arabic, once per branch (not per device);
+  players already signed in get it with their next heartbeat. Text and id: `src/Service/BranchNotice.php`.
 - **Optional stream lock:** only signed-in branches can play the stream, both through `/listen/…` and
   directly on Icecast.
 - **Server-side presence:** listening time comes from the actual Icecast connections, not the browser.
@@ -79,7 +85,7 @@ When every branch uses the new player, lock the stream:
 |---|---|
 | Who signs in | A **branch** (not a person, not an AzuraCast account), with its own PIN |
 | Devices | **One device per branch.** A new login elsewhere signs the first device out within 60 s ("signed in on another device") |
-| PINs | **4 digits** by default (`BRANCH_TRACKER_PIN_LENGTH`, 4–8), unique per station, no repeated or sequential digits. Shown once when created or changed |
+| PINs | **4 digits** by default (`BRANCH_TRACKER_PIN_LENGTH`, 4–8), unique per station, no repeated or sequential digits. Visible to branch managers in the board's PIN column. The key is `BRANCH_TRACKER_PIN_KEY` if set, else the install's unique id; keep it when moving servers, or the PINs stop working |
 | Wrong PINs | 5 attempts per IP per minute; 20 failures per station per 5 min, then logins pause (HTTP 429) |
 | Player check-in | Every **60 s**, plus right after play / pause / volume changes |
 | Presence | AzuraCast scans Icecast's listeners every **~10–15 s**; Tracker's job runs **every minute** |
@@ -109,16 +115,18 @@ When every branch uses the new player, lock the stream:
 | `branch-tracker:public-page <station> [on\|off]` | Show or set the PIN login on the public page |
 | `branch-tracker:import <station> <file.csv> [--dry-run] [--new-pins] [--legacy-pins]` | Import branches from a CSV (`PIN, Branch Name, Branch ID`), upserting by branch ID |
 | `branch-tracker:presence <station> [--now="Y-m-d H:i"] [--json]` | Run the presence job now and print live status |
+| `branch-tracker:recover-pins [--max-digits=6]` | Fill the PIN column once for branches whose PIN was set before PINs were kept (found from their hash; PINs don't change) |
 
 ### API
 
 Board/admin endpoints need an AzuraCast session or an `X-API-Key`. Player endpoints are public and rate-limited.
 
 ```
-GET    /api/station/{station}/branches                    list branches (PINs are never returned)
+GET    /api/station/{station}/branches                    list branches (no PINs)
+GET    /api/station/{station}/branches/pins               [{id, pin}] for the PIN column ("manage branches" only)
 POST   /api/station/{station}/branches                    {code, name, pin?} -> 201, includes the PIN once
 GET    /api/station/{station}/branches/{id}
-PUT    /api/station/{station}/branches/{id}               {code?, name?, is_enabled?}
+PUT    /api/station/{station}/branches/{id}               {code?, name?, company?, is_enabled?}
 DELETE /api/station/{station}/branches/{id}
 POST   /api/station/{station}/branches/{id}/pin           {pin?} -> set or generate a PIN; signs the branch out
 POST   /api/station/{station}/branches/logout-all         sign out every branch; players ask for the PIN again
@@ -128,8 +136,9 @@ GET    /api/station/{station}/branches/report             ?from=&to=[&format=csv
 GET    /api/station/{station}/branches/settings           public page login, stream auth mode
 PUT    /api/station/{station}/branches/settings           {public_page_login: bool}
 
-POST   /api/station/{station}/branch/login                {pin} -> {token, branch, heartbeat_seconds}
-POST   /api/station/{station}/branch/heartbeat            {token, volume?, state?}
+POST   /api/station/{station}/branch/login                {pin} -> {token, branch, heartbeat_seconds, notice}
+POST   /api/station/{station}/branch/heartbeat            {token, volume?, state?} -> {..., notice}
+POST   /api/station/{station}/branch/notice-seen          {token, id}: the branch has read the notice
 POST   /api/station/{station}/branch/logout               {token}
 GET    /api/branch-tracker/ping                           health check
 ```

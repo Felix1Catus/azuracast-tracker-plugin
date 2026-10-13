@@ -63,6 +63,7 @@ return static function (CallableEventDispatcherInterface $dispatcher) use ($guar
                 'branch-tracker:stream-auth' => Console\StreamAuthCommand::class,
                 'branch-tracker:presence' => Console\PresenceCommand::class,
                 'branch-tracker:public-page' => Console\PublicPageCommand::class,
+                'branch-tracker:recover-pins' => Console\RecoverPinsCommand::class,
             ]);
         })
     );
@@ -104,6 +105,7 @@ return static function (CallableEventDispatcherInterface $dispatcher) use ($guar
                     $group->post('/login', $c . ':loginAction')->setName('branch-tracker:login');
                     $group->post('/heartbeat', $c . ':heartbeatAction')->setName('branch-tracker:heartbeat');
                     $group->post('/logout', $c . ':logoutAction')->setName('branch-tracker:logout');
+                    $group->post('/notice-seen', $c . ':noticeSeenAction')->setName('branch-tracker:notice-seen');
                 }
             )->add(Middleware\RequireStation::class)
                 ->add(Middleware\GetStation::class)
@@ -179,6 +181,7 @@ return static function (CallableEventDispatcherInterface $dispatcher) use ($guar
                     $group->put('/{branch_id:\d+}', $c . ':updateAction')->add($manage);
                     $group->delete('/{branch_id:\d+}', $c . ':deleteAction')->add($manage);
                     $group->post('/{branch_id:\d+}/pin', $c . ':setPinAction')->add($manage);
+                    $group->get('/pins', $c . ':pinsAction')->setName('branch-tracker:pins')->add($manage);
                     $group->post('/logout-all', $c . ':logoutAllAction')->setName('branch-tracker:logout-all')->add($manage);
                 }
             )->add(Middleware\RequireStation::class)

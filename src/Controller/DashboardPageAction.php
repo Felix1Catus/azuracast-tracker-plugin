@@ -39,6 +39,7 @@ final class DashboardPageAction implements SingleActionInterface
             'csrf' => $public ? null : $request->getCsrf()->generate(ApiAuth::API_CSRF_NAMESPACE),
             'canManage' => !$public && $request->getAcl()->isAllowed(Permissions::MANAGE, $station->id),
             'pinLength' => PinHasher::length(),
+            'companies' => \Plugin\BranchTracker\Entity\Branch::COMPANIES,
             'version' => PingAction::VERSION,
         ];
 
